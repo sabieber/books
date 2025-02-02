@@ -1,0 +1,16 @@
+### Rust
+**/debug/
+**/target/
+**/*.rs.bk
+
+### Node
+**/node_modules/
+**/dist/
+
+### JetBrains IDE
+.idea/
+*.iml
+
+### Docker
+.env
+db/
