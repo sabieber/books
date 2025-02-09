@@ -13,6 +13,11 @@ pub struct LoginRequest {
     pub password: String,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct UserIdRequest {
+    pub user_id: String,
+}
+
 #[derive(Debug, Serialize)]
 pub struct RegisterResponse {
     pub message: String,
@@ -27,4 +32,9 @@ pub struct LoginResponse {
 #[derive(Debug, Serialize)]
 pub struct ErrorResponse {
     pub error: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ListShelvesResponse {
+    pub shelves: Vec<serde_json::Value>,
 }

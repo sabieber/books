@@ -4,10 +4,10 @@ mod schema;
 mod types;
 
 use crate::db::connect;
-use crate::models::User;
+use crate::models::{Shelf, User};
 use crate::schema::users::dsl::users;
 use crate::schema::users::name;
-use crate::types::{ErrorResponse, LoginRequest, LoginResponse, RegisterRequest, RegisterResponse};
+use crate::types::{ErrorResponse, ListShelvesResponse, LoginRequest, LoginResponse, RegisterRequest, RegisterResponse, UserIdRequest};
 use argonautica::{Hasher, Verifier};
 use axum::extract::rejection::JsonRejection;
 use axum::{
@@ -49,6 +49,7 @@ async fn main() {
         .route("/api/users", get(json_users))
         .route("/api/user/register", post(register))
         .route("/api/user/login", post(login))
+        .route("/api/shelves", post(list_shelves))
         .layer(cors);
 
     info!("starting server...");
@@ -181,8 +182,38 @@ pub async fn login(Json(payload): Json<LoginRequest>) -> impl IntoResponse {
         (
             StatusCode::UNAUTHORIZED,
             Json(json!(ErrorResponse {
-                    error: "Login failed.".to_string(),
-                })),
+                error: "Login failed.".to_string(),
+            })),
         )
     }
+}
+
+/// Lists the shelves of a user.
+///
+/// This route accepts a query parameter `user_id` which is the UUID of the user.
+pub async fn list_shelves(Json(payload): Json<UserIdRequest>) -> impl IntoResponse {
+    let connection = &mut connect();
+
+    let user_id = Uuid::parse_str(&payload.user_id).expect("Invalid user ID");
+    let results = crate::schema::shelves::dsl::shelves
+        .filter(crate::schema::shelves::dsl::user.eq(user_id))
+        .load::<Shelf>(connection)
+        .expect("Error loading shelves");
+
+    let mut json_shelves = Vec::new();
+    for shelf in results {
+        let json_shelf = json!({
+            "id": shelf.id.to_string(),
+            "name": shelf.name,
+            "description": shelf.description,
+            "user": shelf.user.to_string(),
+            "created_at": shelf.created_at.to_string(),
+            "updated_at": shelf.updated_at.to_string(),
+        });
+        json_shelves.push(json_shelf);
+    }
+
+    (StatusCode::OK, Json(json!(ListShelvesResponse {
+        shelves: json_shelves,
+    })))
 }
