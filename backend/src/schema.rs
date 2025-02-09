@@ -6,7 +6,6 @@ diesel::table! {
         #[max_length = 32]
         name -> Varchar,
         password -> Text,
-        salt -> Text,
         elevated -> Bool,
     }
 }
