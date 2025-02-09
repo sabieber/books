@@ -22,6 +22,7 @@ export default {
   methods: {
     logout() {
       localStorage.removeItem('token')
+      localStorage.removeItem('user_id')
       router.push('/')
     }
   }

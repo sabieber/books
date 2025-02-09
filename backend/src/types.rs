@@ -21,6 +21,7 @@ pub struct RegisterResponse {
 #[derive(Debug, Serialize)]
 pub struct LoginResponse {
     pub message: String,
+    pub user_id: String,
 }
 
 #[derive(Debug, Serialize)]

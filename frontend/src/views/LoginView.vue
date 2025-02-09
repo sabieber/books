@@ -44,21 +44,26 @@ export default {
         body: JSON.stringify({username: this.name, password: this.password})
       }).then(async response => {
         if (response.ok) {
-          // Handle successful login
-          localStorage.setItem('token', 'TODO')
-          await router.push('/')
+          response.json().then(data => {
+            localStorage.setItem('token', 'TODO')
+            localStorage.setItem('user_id', data.user_id)
+            router.push('/')
+          }).catch(error => {
+            this.errorMessage = 'Failed to connect to the server!'
+            console.error('Login failed:', error)
+          })
         } else {
           response.json().then(data => {
             this.errorMessage = data.error
             console.error('Registration failed:', data.error)
           }).catch(error => {
             this.errorMessage = 'Failed to connect to the server!'
-            console.error('Registration failed:', error)
+            console.error('Login failed:', error)
           })
         }
       }).catch(error => {
         this.errorMessage = 'Failed to connect to the server!'
-        console.error('Registration failed:', error)
+        console.error('Login failed:', error)
       })
     }
   }

@@ -174,6 +174,7 @@ pub async fn login(Json(payload): Json<LoginRequest>) -> impl IntoResponse {
             StatusCode::OK,
             Json(json!(LoginResponse {
                 message: "Successfully logged in user.".to_string(),
+                user_id: user.id.to_string(),
             })),
         )
     } else {
