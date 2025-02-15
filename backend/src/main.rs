@@ -7,7 +7,7 @@ use crate::db::connect;
 use crate::models::{Shelf, User};
 use crate::schema::users::dsl::users;
 use crate::schema::users::name;
-use crate::types::{ErrorResponse, ListShelvesResponse, LoginRequest, LoginResponse, RegisterRequest, RegisterResponse, UserIdRequest};
+use crate::types::{ErrorResponse, ListShelvesResponse, LoginRequest, LoginResponse, RegisterRequest, RegisterResponse, UserIdRequest, CreateShelfRequest};
 use argonautica::{Hasher, Verifier};
 use axum::extract::rejection::JsonRejection;
 use axum::{
@@ -50,6 +50,7 @@ async fn main() {
         .route("/api/user/register", post(register))
         .route("/api/user/login", post(login))
         .route("/api/shelves", post(list_shelves))
+        .route("/api/shelves/create", post(create_shelf))
         .layer(cors);
 
     info!("starting server...");
@@ -216,4 +217,39 @@ pub async fn list_shelves(Json(payload): Json<UserIdRequest>) -> impl IntoRespon
     (StatusCode::OK, Json(json!(ListShelvesResponse {
         shelves: json_shelves,
     })))
+}
+
+/// Creates a new shelf.
+///
+/// This route accepts a JSON payload with the following structure:
+/// - `name`: The name of the shelf.
+/// - `description`: The description of the shelf.
+/// - `user_id`: The UUID of the user who owns the shelf.
+pub async fn create_shelf(Json(payload): Json<CreateShelfRequest>) -> impl IntoResponse {
+    let new_shelf = Shelf {
+        id: Uuid::new_v4(),
+        name: payload.name.clone(),
+        description: payload.description.clone(),
+        user: Uuid::parse_str(&payload.user_id).expect("Invalid user ID"),
+        created_at: chrono::Utc::now().naive_utc(),
+        updated_at: chrono::Utc::now().naive_utc(),
+    };
+
+    let connection = &mut connect();
+
+    match diesel::insert_into(crate::schema::shelves::dsl::shelves)
+        .values(&new_shelf)
+        .execute(connection)
+    {
+        Ok(_) => (
+            StatusCode::CREATED,
+            Json(json!({ "message": "Shelf created successfully." })),
+        ),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!(ErrorResponse {
+                error: format!("Error while creating the shelf: {}", e),
+            })),
+        ),
+    }
 }

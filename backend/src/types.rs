@@ -18,6 +18,13 @@ pub struct UserIdRequest {
     pub user_id: String,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct CreateShelfRequest {
+    pub name: String,
+    pub description: Option<String>,
+    pub user_id: String,
+}
+
 #[derive(Debug, Serialize)]
 pub struct RegisterResponse {
     pub message: String,
