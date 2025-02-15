@@ -228,8 +228,8 @@ pub async fn list_shelves(Json(payload): Json<UserIdRequest>) -> impl IntoRespon
 pub async fn create_shelf(Json(payload): Json<CreateShelfRequest>) -> impl IntoResponse {
     let new_shelf = Shelf {
         id: Uuid::new_v4(),
-        name: payload.name.clone(),
-        description: payload.description.clone(),
+        name: payload.name.trim().to_string(),
+        description: payload.description.map(|d| d.trim().to_string()),
         user: Uuid::parse_str(&payload.user_id).expect("Invalid user ID"),
         created_at: chrono::Utc::now().naive_utc(),
         updated_at: chrono::Utc::now().naive_utc(),
