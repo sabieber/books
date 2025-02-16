@@ -5,6 +5,7 @@
     </div>
     <div class="flex-none">
       <ul class="menu menu-horizontal px-1">
+        <li><RouterLink to="/search"><MagnifyingGlassIcon class="size-6" /></RouterLink></li>
         <li><RouterLink to="/">Home</RouterLink></li>
         <li><RouterLink to="/library">Library</RouterLink></li>
         <li><a @click="logout">Logout</a></li>
@@ -17,8 +18,10 @@
 
 <script lang="ts">
 import router from "@/router";
+import {MagnifyingGlassIcon} from "@heroicons/vue/16/solid";
 
 export default {
+  components: {MagnifyingGlassIcon},
   methods: {
     logout() {
       localStorage.removeItem('token')

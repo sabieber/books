@@ -1,6 +1,8 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '@/views/HomeView.vue'
+import { createRouter, createWebHistory } from 'vue-router';
+import HomeView from '@/views/HomeView.vue';
 import LibraryView from "@/views/LibraryView.vue";
+import SearchView from "@/views/SearchView.vue";
+import SearchDetailView from "@/views/SearchDetailView.vue";
 import LoginView from "@/views/LoginView.vue";
 import RegisterView from "@/views/RegisterView.vue";
 
@@ -16,6 +18,22 @@ const router = createRouter({
       path: '/library',
       name: 'library',
       component: LibraryView,
+      meta: {
+        requiresAuth: true
+      }
+    },
+    {
+      path: '/search',
+      name: 'search',
+      component: SearchView,
+      meta: {
+        requiresAuth: true
+      }
+    },
+    {
+      path: '/search/:id',
+      name: 'search-detail',
+      component: SearchDetailView,
       meta: {
         requiresAuth: true
       }
