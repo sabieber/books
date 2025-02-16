@@ -4,9 +4,11 @@
       <div class="flex justify-between items-center mb-4">
         <h2 class="text-2xl font-semibold text-white">Search</h2>
       </div>
-      <div class="form-control mb-4">
-        <input type="text" v-model="query" class="input input-bordered" placeholder="Search for books..." />
-        <button class="btn btn-primary mt-2" @click="searchBooks">Search</button>
+      <div class="form-control mb-4 flex flex-row">
+        <input type="text" v-model="query" class="input input-bordered flex-grow" placeholder="Search for books..." @keyup.enter="searchBooks" />
+        <button class="btn btn-square btn-primary ml-2" @click="searchBooks">
+          <MagnifyingGlassIcon class="size-6"/>
+        </button>
       </div>
       <div v-if="loading" class="flex justify-center">
         <span class="loading loading-spinner loading-lg"></span>
@@ -28,8 +30,10 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import {MagnifyingGlassIcon} from "@heroicons/vue/16/solid";
 
 export default defineComponent({
+  components: {MagnifyingGlassIcon},
   data() {
     return {
       query: '',
