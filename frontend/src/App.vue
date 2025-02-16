@@ -1,27 +1,45 @@
 <template>
   <div class="navbar bg-gray-800">
     <div class="flex-1">
-      <a class="btn btn-ghost text-xl"><RouterLink to="/">Books</RouterLink></a>
+      <a class="btn btn-ghost text-xl">
+        <RouterLink to="/">Books</RouterLink>
+      </a>
     </div>
     <div class="flex-none">
       <ul class="menu menu-horizontal px-1">
-        <li><RouterLink to="/search"><MagnifyingGlassIcon class="size-6" /></RouterLink></li>
-        <li><RouterLink to="/">Home</RouterLink></li>
-        <li><RouterLink to="/library">Library</RouterLink></li>
-        <li><a @click="logout">Logout</a></li>
+        <li class="tooltip tooltip-bottom" data-tip="Home">
+          <RouterLink to="/">
+            <HomeIcon class="size-6"/>
+          </RouterLink>
+        </li>
+        <li class="tooltip tooltip-bottom" data-tip="Search">
+          <RouterLink to="/search">
+            <MagnifyingGlassIcon class="size-6"/>
+          </RouterLink>
+        </li>
+        <li class="tooltip tooltip-bottom" data-tip="Library">
+          <RouterLink to="/library">
+            <BookOpenIcon class="size-6"/>
+          </RouterLink>
+        </li>
+        <li class="tooltip tooltip-bottom" data-tip="Logout">
+          <a @click="logout">
+            <UserIcon class="size-6"/>
+          </a>
+        </li>
       </ul>
     </div>
   </div>
 
-  <RouterView />
+  <RouterView/>
 </template>
 
 <script lang="ts">
 import router from "@/router";
-import {MagnifyingGlassIcon} from "@heroicons/vue/16/solid";
+import {MagnifyingGlassIcon, HomeIcon, BookOpenIcon, UserIcon} from "@heroicons/vue/16/solid";
 
 export default {
-  components: {MagnifyingGlassIcon},
+  components: {MagnifyingGlassIcon, HomeIcon, BookOpenIcon, UserIcon},
   methods: {
     logout() {
       localStorage.removeItem('token')
