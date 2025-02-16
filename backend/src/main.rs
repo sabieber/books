@@ -4,10 +4,10 @@ mod schema;
 mod types;
 
 use crate::db::connect;
-use crate::models::{Shelf, User};
+use crate::models::{Shelf, User, Book};
 use crate::schema::users::dsl::users;
 use crate::schema::users::name;
-use crate::types::{ErrorResponse, ListShelvesResponse, LoginRequest, LoginResponse, RegisterRequest, RegisterResponse, UserIdRequest, CreateShelfRequest};
+use crate::types::{ErrorResponse, ListShelvesResponse, LoginRequest, LoginResponse, RegisterRequest, RegisterResponse, UserIdRequest, CreateShelfRequest, AddBookToShelfRequest};
 use argonautica::{Hasher, Verifier};
 use axum::extract::rejection::JsonRejection;
 use axum::{
@@ -51,6 +51,7 @@ async fn main() {
         .route("/api/user/login", post(login))
         .route("/api/shelves", post(list_shelves))
         .route("/api/shelves/create", post(create_shelf))
+        .route("/api/shelves/add-book", post(add_book_to_shelf))
         .layer(cors);
 
     info!("starting server...");
@@ -249,6 +250,38 @@ pub async fn create_shelf(Json(payload): Json<CreateShelfRequest>) -> impl IntoR
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!(ErrorResponse {
                 error: format!("Error while creating the shelf: {}", e),
+            })),
+        ),
+    }
+}
+
+async fn add_book_to_shelf(Json(payload): Json<AddBookToShelfRequest>) -> impl IntoResponse {
+    let connection = &mut connect();
+
+    let new_book = Book {
+        id: Uuid::new_v4(),
+        user: Uuid::parse_str(&payload.user_id).expect("Invalid user ID"),
+        shelf: Uuid::parse_str(&payload.shelf_id).expect("Invalid shelf ID"),
+        title: payload.title,
+        author: payload.author,
+        isbn13: payload.isbn13,
+        isbn10: payload.isbn10,
+        google_books_id: payload.google_books_id,
+        added_at: chrono::Utc::now().naive_utc(),
+    };
+
+    match diesel::insert_into(schema::books::dsl::books)
+        .values(&new_book)
+        .execute(connection)
+    {
+        Ok(_) => (
+            StatusCode::CREATED,
+            Json(json!({ "message": "Book added to shelf successfully." })),
+        ),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!(ErrorResponse {
+                error: format!("Error while adding the book to the shelf: {}", e),
             })),
         ),
     }

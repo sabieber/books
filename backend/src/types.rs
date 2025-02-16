@@ -25,6 +25,17 @@ pub struct CreateShelfRequest {
     pub user_id: String,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct AddBookToShelfRequest {
+    pub user_id: String,
+    pub shelf_id: String,
+    pub title: Option<String>,
+    pub author: Option<String>,
+    pub isbn13: Option<String>,
+    pub isbn10: Option<String>,
+    pub google_books_id: Option<String>,
+}
+
 #[derive(Debug, Serialize)]
 pub struct RegisterResponse {
     pub message: String,

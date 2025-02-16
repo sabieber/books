@@ -1,6 +1,9 @@
 <template>
   <div class="dark min-h-screen flex items-center justify-center bg-gray-900">
-    <div class="w-full max-w-md bg-gray-800 rounded-lg shadow-md p-6">
+    <div class="w-full max-w-md bg-gray-800 rounded-lg shadow-md p-6 relative">
+      <button @click="showPopup = true" class="absolute top-4 right-4 text-white">
+        <PlusIcon class="size-6 text-white"/>
+      </button>
       <div v-if="loading" class="flex justify-center">
         <span class="loading loading-spinner loading-lg"></span>
       </div>
@@ -13,18 +16,30 @@
       </div>
       <div v-else class="text-white text-center">Book not found.</div>
     </div>
+    <AddToShelfPopup v-if="showPopup" @close="showPopup = false" @toast="showToast" :book="book" />
+    <div v-if="toastMessage" class="toast toast-top toast-center">
+      <div :class="`alert ${toastType}`">
+        <span>{{ toastMessage }}</span>
+      </div>
+    </div>
   </div>
 </template>
 
 <script lang="ts">
 import {defineComponent, onMounted, ref} from 'vue';
 import {useRoute} from 'vue-router';
+import {PlusIcon} from "@heroicons/vue/16/solid";
+import AddToShelfPopup from '@/components/AddToShelfPopup.vue';
 
 export default defineComponent({
+  components: {PlusIcon, AddToShelfPopup},
   setup() {
     const route = useRoute();
     const book = ref(null);
     const loading = ref(true);
+    const showPopup = ref(false);
+    const toastMessage = ref('');
+    const toastType = ref('');
 
     const fetchBookDetails = async (bookId: string) => {
       try {
@@ -41,6 +56,14 @@ export default defineComponent({
       }
     };
 
+    const showToast = ({ message, type }) => {
+      toastMessage.value = message;
+      toastType.value = type;
+      setTimeout(() => {
+        toastMessage.value = '';
+      }, 3000);
+    };
+
     onMounted(() => {
       const bookId = route.params.id as string;
       fetchBookDetails(bookId);
@@ -49,6 +72,10 @@ export default defineComponent({
     return {
       book,
       loading,
+      showPopup,
+      toastMessage,
+      toastType,
+      showToast,
     };
   },
 });
