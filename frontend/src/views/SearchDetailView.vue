@@ -1,7 +1,7 @@
 <template>
   <div class="dark min-h-screen flex items-center justify-center bg-gray-900">
     <div class="w-full max-w-md bg-gray-800 rounded-lg shadow-md p-6 relative">
-      <button @click="showPopup = true" class="absolute top-4 right-4 text-white">
+      <button @click="showPopup = true" class="btn btn-circle btn-primary absolute top-4 right-4 text-white">
         <PlusIcon class="size-6 text-white"/>
       </button>
       <div v-if="loading" class="flex justify-center">

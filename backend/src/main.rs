@@ -7,7 +7,8 @@ use crate::db::connect;
 use crate::models::{Shelf, User, Book};
 use crate::schema::users::dsl::users;
 use crate::schema::users::name;
-use crate::types::{ErrorResponse, ListShelvesResponse, LoginRequest, LoginResponse, RegisterRequest, RegisterResponse, UserIdRequest, CreateShelfRequest, AddBookToShelfRequest};
+use crate::schema::books::dsl::books;
+use crate::types::{ErrorResponse, ListShelvesResponse, LoginRequest, LoginResponse, RegisterRequest, RegisterResponse, UserIdRequest, CreateShelfRequest, AddBookToShelfRequest, ShelfBooksRequest, RemoveBookFromShelfRequest, RemoveShelfRequest};
 use argonautica::{Hasher, Verifier};
 use axum::extract::rejection::JsonRejection;
 use axum::{
@@ -52,6 +53,9 @@ async fn main() {
         .route("/api/shelves", post(list_shelves))
         .route("/api/shelves/create", post(create_shelf))
         .route("/api/shelves/add-book", post(add_book_to_shelf))
+        .route("/api/shelves/books", post(list_shelf_books))
+        .route("/api/shelves/remove-book", post(remove_book_from_shelf))
+        .route("/api/shelves/remove", post(remove_shelf))
         .layer(cors);
 
     info!("starting server...");
@@ -255,6 +259,98 @@ pub async fn create_shelf(Json(payload): Json<CreateShelfRequest>) -> impl IntoR
     }
 }
 
+/// Removes a shelf.
+///
+/// This route accepts a JSON payload with the following structure:
+/// - `shelf_id`: The UUID of the shelf to remove.
+pub async fn remove_shelf(Json(payload): Json<RemoveShelfRequest>) -> impl IntoResponse {
+    let connection = &mut connect();
+
+    let shelf_id = Uuid::parse_str(&payload.shelf_id).expect("Invalid shelf ID");
+
+    let delete_books_result = diesel::delete(crate::schema::books::dsl::books.filter(crate::schema::books::dsl::shelf.eq(shelf_id)))
+        .execute(connection);
+
+    if let Err(e) = delete_books_result {
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!(ErrorResponse {
+                error: format!("Error while removing books from the shelf: {}", e),
+            })),
+        );
+    }
+
+    match diesel::delete(crate::schema::shelves::dsl::shelves.filter(crate::schema::shelves::dsl::id.eq(shelf_id)))
+        .execute(connection)
+    {
+        Ok(_) => (
+            StatusCode::OK,
+            Json(json!({ "message": "Shelf and its books removed successfully." })),
+        ),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!(ErrorResponse {
+                error: format!("Error while removing the shelf: {}", e),
+            })),
+        ),
+    }
+}
+
+/// Lists the books of a shelf.
+/// 
+/// This route accepts a JSON payload with the following structure:
+/// - `shelf_id`: The UUID of the shelf to list the books of.
+pub async fn list_shelf_books(Json(payload): Json<ShelfBooksRequest>) -> impl IntoResponse {
+    let connection = &mut connect();
+
+    let shelf_id = Uuid::parse_str(&payload.shelf_id).expect("Invalid shelf ID");
+    let shelf = crate::schema::shelves::dsl::shelves
+        .filter(crate::schema::shelves::dsl::id.eq(shelf_id))
+        .first::<Shelf>(connection)
+        .expect("Error loading shelf");
+
+    let results = books
+        .filter(crate::schema::books::dsl::shelf.eq(shelf_id))
+        .load::<Book>(connection)
+        .expect("Error loading books");
+
+    let mut json_books = Vec::new();
+    for book in results {
+        let json_book = json!({
+            "id": book.id.to_string(),
+            "title": book.title,
+            "author": book.author,
+            "isbn13": book.isbn13,
+            "isbn10": book.isbn10,
+            "google_books_id": book.google_books_id,
+            "added_at": book.added_at.to_string(),
+        });
+        json_books.push(json_book);
+    }
+
+    (StatusCode::OK, Json(json!({
+        "shelf": {
+            "id": shelf.id.to_string(),
+            "name": shelf.name,
+            "description": shelf.description,
+            "user": shelf.user.to_string(),
+            "created_at": shelf.created_at.to_string(),
+            "updated_at": shelf.updated_at.to_string(),
+        },
+        "books": json_books,
+    })))
+}
+
+/// Adds a book to a shelf.
+///
+/// This route accepts a JSON payload with the following structure:
+/// - `user_id`: The UUID of the user who owns the shelf.
+/// - `shelf_id`: The UUID of the shelf to add the book to.
+/// - `title`: The title of the book.
+/// - `author`: The author of the book.
+/// - `isbn13`: The ISBN-13 of the book.
+/// - `isbn10`: The ISBN-10 of the book.
+/// - `google_books_id`: The Google Books ID of the book.
 async fn add_book_to_shelf(Json(payload): Json<AddBookToShelfRequest>) -> impl IntoResponse {
     let connection = &mut connect();
 
@@ -282,6 +378,31 @@ async fn add_book_to_shelf(Json(payload): Json<AddBookToShelfRequest>) -> impl I
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!(ErrorResponse {
                 error: format!("Error while adding the book to the shelf: {}", e),
+            })),
+        ),
+    }
+}
+
+/// Removes a book from a shelf.
+///
+/// This route accepts a JSON payload with the following structure:
+/// - `book_id`: The UUID of the book to remove from the shelf.
+pub async fn remove_book_from_shelf(Json(payload): Json<RemoveBookFromShelfRequest>) -> impl IntoResponse {
+    let connection = &mut connect();
+
+    let book_id = Uuid::parse_str(&payload.book_id).expect("Invalid book ID");
+
+    match diesel::delete(crate::schema::books::dsl::books.filter(crate::schema::books::dsl::id.eq(book_id)))
+        .execute(connection)
+    {
+        Ok(_) => (
+            StatusCode::OK,
+            Json(json!({ "message": "Book removed from shelf successfully." })),
+        ),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!(ErrorResponse {
+                error: format!("Error while removing the book from the shelf: {}", e),
             })),
         ),
     }

@@ -8,28 +8,45 @@
       <div v-if="loading" class="flex justify-center">
         <span class="loading loading-spinner loading-lg"></span>
       </div>
-      <ul v-else-if="shelves.length" class="list-disc list-inside text-white">
-        <li v-for="shelf in shelves" :key="shelf.id">
-          {{ shelf.name }} - {{ shelf.description }}
+      <ul v-else-if="shelves.length" class="space-y-4">
+        <li v-for="shelf in shelves" :key="shelf.id" class="p-4 bg-gray-700 rounded-lg hover:bg-gray-600 transition">
+          <div class="flex justify-between items-center">
+            <div @click="goToShelf(shelf.id)" class="cursor-pointer">
+              <h3 class="text-xl font-bold text-white">{{ shelf.name }}</h3>
+              <p class="text-sm text-gray-400">{{ shelf.description }}</p>
+            </div>
+            <button @click="removeShelf(shelf.id)" class="btn btn-circle btn-sm btn-error">
+              <MinusIcon class="size-3 text-white"/>
+            </button>
+          </div>
         </li>
       </ul>
       <div v-else class="text-white text-center">No shelves found.</div>
+    </div>
+    <div v-if="toastMessage" class="toast toast-top toast-center">
+      <div :class="`alert ${toastType}`">
+        <span>{{ toastMessage }}</span>
+      </div>
     </div>
   </div>
 </template>
 
 <script lang="ts">
 import {defineComponent} from 'vue';
+import {MinusIcon} from "@heroicons/vue/16/solid";
 import CreateShelfComponent from '@/components/CreateShelfComponent.vue';
 
 export default defineComponent({
   components: {
     CreateShelfComponent,
+    MinusIcon,
   },
   data() {
     return {
       shelves: [] as Array<{ id: string, name: string, description: string }>,
       loading: true,
+      toastMessage: '',
+      toastType: '',
     };
   },
   async created() {
@@ -58,6 +75,35 @@ export default defineComponent({
         }
       } else {
         this.loading = false;
+      }
+    },
+    goToShelf(shelfId: string) {
+      this.$router.push({ name: 'shelf-detail', params: { id: shelfId } });
+    },
+    async removeShelf(shelfId: string) {
+      try {
+        const response = await fetch('http://localhost:3000/api/shelves/remove', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({shelf_id: shelfId}),
+        });
+        if (response.ok) {
+          this.toastMessage = 'Shelf removed successfully.';
+          this.toastType = 'alert-success';
+          this.shelves = this.shelves.filter(shelf => shelf.id !== shelfId);
+        } else {
+          console.error('Failed to remove shelf:', await response.json());
+          this.toastMessage = 'Failed to remove shelf.';
+          this.toastType = 'alert-error';
+        }
+      } catch (error) {
+        console.error('Failed to remove shelf:', error);
+        this.toastMessage = 'Failed to remove shelf.';
+        this.toastType = 'alert-error';
+      } finally {
+        setTimeout(() => {
+          this.toastMessage = '';
+        }, 3000);
       }
     },
   },

@@ -5,6 +5,7 @@ import SearchView from "@/views/SearchView.vue";
 import SearchDetailView from "@/views/SearchDetailView.vue";
 import LoginView from "@/views/LoginView.vue";
 import RegisterView from "@/views/RegisterView.vue";
+import ShelfDetailView from "@/views/ShelfDetailView.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -34,6 +35,14 @@ const router = createRouter({
       path: '/search/:id',
       name: 'search-detail',
       component: SearchDetailView,
+      meta: {
+        requiresAuth: true
+      }
+    },
+    {
+      path: '/shelf/:id',
+      name: 'shelf-detail',
+      component: ShelfDetailView,
       meta: {
         requiresAuth: true
       }

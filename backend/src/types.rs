@@ -36,6 +36,26 @@ pub struct AddBookToShelfRequest {
     pub google_books_id: Option<String>,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct ShelfBooksRequest {
+    pub shelf_id: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct RemoveBookFromShelfRequest {
+    pub book_id: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct RemoveShelfRequest {
+    pub shelf_id: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ShelfBooksResponse {
+    pub books: Vec<serde_json::Value>,
+}
+
 #[derive(Debug, Serialize)]
 pub struct RegisterResponse {
     pub message: String,
