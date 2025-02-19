@@ -10,12 +10,12 @@
       </div>
       <ul v-else-if="shelves.length" class="space-y-4">
         <li v-for="shelf in shelves" :key="shelf.id" class="p-4 bg-gray-700 rounded-lg hover:bg-gray-600 transition">
-          <div class="flex justify-between items-center">
-            <div @click="goToShelf(shelf.id)" class="cursor-pointer">
+          <div class="flex justify-between items-center cursor-pointer" @click="goToShelf(shelf.id)">
+            <div>
               <h3 class="text-xl font-bold text-white">{{ shelf.name }}</h3>
               <p class="text-sm text-gray-400">{{ shelf.description }}</p>
             </div>
-            <button @click="removeShelf(shelf.id)" class="btn btn-circle btn-sm btn-error">
+            <button @click.stop="removeShelf(shelf.id)" class="btn btn-circle btn-sm btn-error">
               <MinusIcon class="size-3 text-white"/>
             </button>
           </div>
