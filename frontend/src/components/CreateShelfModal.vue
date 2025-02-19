@@ -32,52 +32,59 @@
 </template>
 
 <script lang="ts">
-import {defineComponent} from 'vue';
-import {ExclamationTriangleIcon, PlusIcon} from "@heroicons/vue/16/solid";
+import { defineComponent, ref } from 'vue';
+import { ExclamationTriangleIcon, PlusIcon } from "@heroicons/vue/16/solid";
 
 export default defineComponent({
-  components: {ExclamationTriangleIcon, PlusIcon},
-  data() {
-    return {
-      show: false,
-      name: '',
-      description: '',
-      errorMessage: '',
-    };
-  },
-  methods: {
-    async createShelf() {
+  components: { ExclamationTriangleIcon, PlusIcon },
+  setup(_, { emit }) {
+    const show = ref(false);
+    const name = ref('');
+    const description = ref('');
+    const errorMessage = ref('');
+
+    const createShelf = async () => {
       const userId = localStorage.getItem('user_id');
       if (userId) {
         try {
           const response = await fetch('http://localhost:3000/api/shelves/create', {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({name: this.name, description: this.description, user_id: userId}),
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: name.value, description: description.value, user_id: userId }),
           });
           if (response.ok) {
-            this.$emit('shelfCreated');
-            this.name = '';
-            this.description = '';
-            this.show = false;
-            this.errorMessage = '';
+            emit('shelfCreated');
+            name.value = '';
+            description.value = '';
+            show.value = false;
+            errorMessage.value = '';
           } else {
             const data = await response.json();
-            this.errorMessage = data.error;
+            errorMessage.value = data.error;
             console.error('Failed to create shelf:', data.error);
           }
         } catch (error) {
-          this.errorMessage = 'Failed to connect to the server!';
+          errorMessage.value = 'Failed to connect to the server!';
           console.error('Failed to create shelf:', error);
         }
       }
-    },
-    cancel() {
-      this.name = '';
-      this.description = '';
-      this.show = false;
-      this.errorMessage = '';
-    },
+    };
+
+    const cancel = () => {
+      name.value = '';
+      description.value = '';
+      show.value = false;
+      errorMessage.value = '';
+    };
+
+    return {
+      show,
+      name,
+      description,
+      errorMessage,
+      createShelf,
+      cancel,
+    };
   },
 });
 </script>

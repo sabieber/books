@@ -17,7 +17,7 @@
 </template>
 
 <script lang="ts">
-import {defineComponent, onMounted, ref, PropType} from 'vue';
+import { defineComponent, ref, onMounted, PropType } from 'vue';
 
 export default defineComponent({
   props: {
@@ -26,7 +26,7 @@ export default defineComponent({
       required: true,
     },
   },
-  setup(props, {emit}) {
+  setup(props, { emit }) {
     const shelves = ref([]);
     const loadingShelves = ref(false);
 
@@ -37,8 +37,8 @@ export default defineComponent({
         try {
           const response = await fetch('http://localhost:3000/api/shelves', {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({user_id: userId}),
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId }),
           });
           if (response.ok) {
             const data = await response.json();
@@ -62,7 +62,7 @@ export default defineComponent({
         try {
           const response = await fetch('http://localhost:3000/api/shelves/add-book', {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               user_id: userId,
               shelf_id: shelfId,

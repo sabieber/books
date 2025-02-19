@@ -28,17 +28,17 @@
 </template>
 
 <script lang="ts">
-import {defineComponent, onMounted, ref} from 'vue';
-import {useRoute} from 'vue-router';
-import {MinusIcon} from "@heroicons/vue/16/solid";
+import { defineComponent, ref, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
+import { MinusIcon } from "@heroicons/vue/16/solid";
 
 export default defineComponent({
-  components: {MinusIcon},
+  components: { MinusIcon },
   setup() {
     const route = useRoute();
     const books = ref([]);
     const loading = ref(true);
-    const shelf = ref({name: '', description: ''});
+    const shelf = ref({ name: '', description: '' });
     const toastMessage = ref('');
     const toastType = ref('');
 
@@ -46,8 +46,8 @@ export default defineComponent({
       try {
         const response = await fetch('http://localhost:3000/api/shelves/books', {
           method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({shelf_id: shelfId}),
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ shelf_id: shelfId }),
         });
         if (response.ok) {
           const data = await response.json();
@@ -67,8 +67,8 @@ export default defineComponent({
       try {
         const response = await fetch('http://localhost:3000/api/shelves/remove-book', {
           method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({book_id: bookId}),
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ book_id: bookId }),
         });
         if (response.ok) {
           toastMessage.value = 'Book removed from shelf successfully.';

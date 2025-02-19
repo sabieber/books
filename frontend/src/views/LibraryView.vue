@@ -3,7 +3,7 @@
     <div class="w-full max-w-md bg-gray-800 rounded-lg shadow-md p-6">
       <div class="flex justify-between items-center mb-4">
         <h2 class="text-2xl font-semibold text-white">Library</h2>
-        <CreateShelfComponent @shelfCreated="fetchShelves"/>
+        <CreateShelfModal @shelfCreated="fetchShelves"/>
       </div>
       <div v-if="loading" class="flex justify-center">
         <span class="loading loading-spinner loading-lg"></span>
@@ -32,80 +32,90 @@
 </template>
 
 <script lang="ts">
-import {defineComponent} from 'vue';
-import {MinusIcon} from "@heroicons/vue/16/solid";
-import CreateShelfComponent from '@/components/CreateShelfComponent.vue';
+import { defineComponent, ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { MinusIcon } from "@heroicons/vue/16/solid";
+import CreateShelfModal from '@/components/CreateShelfModal.vue';
 
 export default defineComponent({
   components: {
-    CreateShelfComponent,
+    CreateShelfModal,
     MinusIcon,
   },
-  data() {
-    return {
-      shelves: [] as Array<{ id: string, name: string, description: string }>,
-      loading: true,
-      toastMessage: '',
-      toastType: '',
-    };
-  },
-  async created() {
-    await this.fetchShelves();
-  },
-  methods: {
-    async fetchShelves() {
+  setup() {
+    const shelves = ref<Array<{ id: string, name: string, description: string }>>([]);
+    const loading = ref(true);
+    const toastMessage = ref('');
+    const toastType = ref('');
+    const router = useRouter();
+
+    const fetchShelves = async () => {
       const userId = localStorage.getItem('user_id');
       if (userId) {
         try {
           const response = await fetch('http://localhost:3000/api/shelves', {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({user_id: userId}),
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId }),
           });
           if (response.ok) {
             const data = await response.json();
-            this.shelves = data.shelves;
+            shelves.value = data.shelves;
           } else {
             console.error('Failed to fetch shelves:', await response.json());
           }
         } catch (error) {
           console.error('Failed to fetch shelves:', error);
         } finally {
-          this.loading = false;
+          loading.value = false;
         }
       } else {
-        this.loading = false;
+        loading.value = false;
       }
-    },
-    goToShelf(shelfId: string) {
-      this.$router.push({ name: 'shelf-detail', params: { id: shelfId } });
-    },
-    async removeShelf(shelfId: string) {
+    };
+
+    const goToShelf = (shelfId: string) => {
+      router.push({ name: 'shelf-detail', params: { id: shelfId } });
+    };
+
+    const removeShelf = async (shelfId: string) => {
       try {
         const response = await fetch('http://localhost:3000/api/shelves/remove', {
           method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({shelf_id: shelfId}),
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ shelf_id: shelfId }),
         });
         if (response.ok) {
-          this.toastMessage = 'Shelf removed successfully.';
-          this.toastType = 'alert-success';
-          this.shelves = this.shelves.filter(shelf => shelf.id !== shelfId);
+          toastMessage.value = 'Shelf removed successfully.';
+          toastType.value = 'alert-success';
+          shelves.value = shelves.value.filter(shelf => shelf.id !== shelfId);
         } else {
           console.error('Failed to remove shelf:', await response.json());
-          this.toastMessage = 'Failed to remove shelf.';
-          this.toastType = 'alert-error';
+          toastMessage.value = 'Failed to remove shelf.';
+          toastType.value = 'alert-error';
         }
       } catch (error) {
         console.error('Failed to remove shelf:', error);
-        this.toastMessage = 'Failed to remove shelf.';
-        this.toastType = 'alert-error';
+        toastMessage.value = 'Failed to remove shelf.';
+        toastType.value = 'alert-error';
       } finally {
         setTimeout(() => {
-          this.toastMessage = '';
+          toastMessage.value = '';
         }, 3000);
       }
-    },
+    };
+
+    onMounted(fetchShelves);
+
+    return {
+      shelves,
+      loading,
+      toastMessage,
+      toastType,
+      fetchShelves,
+      goToShelf,
+      removeShelf,
+    };
   },
 });
 </script>

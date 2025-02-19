@@ -26,13 +26,13 @@
 </template>
 
 <script lang="ts">
-import {defineComponent, onMounted, ref} from 'vue';
-import {useRoute} from 'vue-router';
-import {PlusIcon} from "@heroicons/vue/16/solid";
+import { defineComponent, ref, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
+import { PlusIcon } from "@heroicons/vue/16/solid";
 import AddToShelfPopup from '@/components/AddToShelfPopup.vue';
 
 export default defineComponent({
-  components: {PlusIcon, AddToShelfPopup},
+  components: { PlusIcon, AddToShelfPopup },
   setup() {
     const route = useRoute();
     const book = ref(null);

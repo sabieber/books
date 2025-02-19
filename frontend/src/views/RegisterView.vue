@@ -20,42 +20,46 @@
 </template>
 
 <script lang="ts">
+import { defineComponent, ref } from 'vue';
 import router from "@/router";
-import {KeyIcon, UserIcon, ExclamationTriangleIcon} from "@heroicons/vue/16/solid";
+import { KeyIcon, UserIcon, ExclamationTriangleIcon } from "@heroicons/vue/16/solid";
 
-export default {
-  components: {KeyIcon, UserIcon, ExclamationTriangleIcon},
-  data() {
-    return {
-      name: '',
-      password: '',
-      errorMessage: '',
-    };
-  },
-  methods: {
-    register() {
+export default defineComponent({
+  components: { KeyIcon, UserIcon, ExclamationTriangleIcon },
+  setup() {
+    const name = ref('');
+    const password = ref('');
+    const errorMessage = ref('');
+
+    const register = () => {
       fetch('http://localhost:3000/api/user/register', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({username: this.name, password: this.password})
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: name.value, password: password.value })
       }).then(async response => {
         if (response.ok) {
-          // Handle successful registration
-          await router.push('/login')
+          await router.push('/login');
         } else {
           response.json().then(data => {
-            this.errorMessage = data.error
-            console.error('Registration failed:', data.error)
+            errorMessage.value = data.error;
+            console.error('Registration failed:', data.error);
           }).catch(error => {
-            this.errorMessage = 'Failed to connect to the server!'
-            console.error('Registration failed:', error)
-          })
+            errorMessage.value = 'Failed to connect to the server!';
+            console.error('Registration failed:', error);
+          });
         }
       }).catch(error => {
-        this.errorMessage = 'Failed to connect to the server!'
-        console.error('Registration failed:', error)
-      })
-    }
-  }
-};
+        errorMessage.value = 'Failed to connect to the server!';
+        console.error('Registration failed:', error);
+      });
+    };
+
+    return {
+      name,
+      password,
+      errorMessage,
+      register,
+    };
+  },
+});
 </script>

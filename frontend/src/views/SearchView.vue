@@ -28,54 +28,58 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { defineComponent, ref, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import {MagnifyingGlassIcon} from "@heroicons/vue/16/solid";
+import { MagnifyingGlassIcon } from "@heroicons/vue/16/solid";
 
 export default defineComponent({
-  components: {MagnifyingGlassIcon},
-  data() {
-    return {
-      query: '',
-      books: [] as Array<any>,
-      loading: false,
-    };
-  },
+  components: { MagnifyingGlassIcon },
   setup() {
+    const query = ref('');
+    const books = ref<Array<any>>([]);
+    const loading = ref(false);
     const router = useRouter();
     const route = useRoute();
-    return { router, route };
-  },
-  created() {
-    const savedQuery = this.route.query.q as string;
-    if (savedQuery) {
-      this.query = savedQuery;
-      this.searchBooks();
-    }
-  },
-  methods: {
-    async searchBooks() {
-      if (!this.query.trim()) {
+
+    const searchBooks = async () => {
+      if (!query.value.trim()) {
         return;
       }
-      this.loading = true;
+      loading.value = true;
       try {
-        const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(this.query)}`);
+        const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query.value)}`);
         if (response.ok) {
           const data = await response.json();
-          this.books = data.items || [];
+          books.value = data.items || [];
         } else {
           console.error('Failed to fetch books:', await response.json());
         }
       } catch (error) {
         console.error('Failed to fetch books:', error);
       } finally {
-        this.loading = false;
+        loading.value = false;
       }
-    },
-    viewBookDetail(id: string) {
-      this.router.push({ name: 'search-detail', params: { id } });
-    },
+    };
+
+    const viewBookDetail = (id: string) => {
+      router.push({ name: 'search-detail', params: { id } });
+    };
+
+    onMounted(() => {
+      const savedQuery = route.query.q as string;
+      if (savedQuery) {
+        query.value = savedQuery;
+        searchBooks();
+      }
+    });
+
+    return {
+      query,
+      books,
+      loading,
+      searchBooks,
+      viewBookDetail,
+    };
   },
 });
 </script>

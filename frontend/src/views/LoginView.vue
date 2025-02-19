@@ -23,49 +23,54 @@
 </template>
 
 <script lang="ts">
-import {RouterLink} from "vue-router";
-import {UserIcon, KeyIcon, ExclamationTriangleIcon} from "@heroicons/vue/16/solid";
+import { defineComponent, ref } from 'vue';
+import { RouterLink } from "vue-router";
+import { UserIcon, KeyIcon, ExclamationTriangleIcon } from "@heroicons/vue/16/solid";
 import router from "@/router";
 
-export default {
-  components: {RouterLink, UserIcon, KeyIcon, ExclamationTriangleIcon},
-  data() {
-    return {
-      name: '',
-      password: '',
-      errorMessage: '',
-    };
-  },
-  methods: {
-    login() {
+export default defineComponent({
+  components: { RouterLink, UserIcon, KeyIcon, ExclamationTriangleIcon },
+  setup() {
+    const name = ref('');
+    const password = ref('');
+    const errorMessage = ref('');
+
+    const login = () => {
       fetch('http://localhost:3000/api/user/login', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({username: this.name, password: this.password})
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: name.value, password: password.value })
       }).then(async response => {
         if (response.ok) {
           response.json().then(data => {
-            localStorage.setItem('token', 'TODO')
-            localStorage.setItem('user_id', data.user_id)
-            router.push('/')
+            localStorage.setItem('token', 'TODO');
+            localStorage.setItem('user_id', data.user_id);
+            router.push('/');
           }).catch(error => {
-            this.errorMessage = 'Failed to connect to the server!'
-            console.error('Login failed:', error)
-          })
+            errorMessage.value = 'Failed to connect to the server!';
+            console.error('Login failed:', error);
+          });
         } else {
           response.json().then(data => {
-            this.errorMessage = data.error
-            console.error('Registration failed:', data.error)
+            errorMessage.value = data.error;
+            console.error('Login failed:', data.error);
           }).catch(error => {
-            this.errorMessage = 'Failed to connect to the server!'
-            console.error('Login failed:', error)
-          })
+            errorMessage.value = 'Failed to connect to the server!';
+            console.error('Login failed:', error);
+          });
         }
       }).catch(error => {
-        this.errorMessage = 'Failed to connect to the server!'
-        console.error('Login failed:', error)
-      })
-    }
-  }
-};
+        errorMessage.value = 'Failed to connect to the server!';
+        console.error('Login failed:', error);
+      });
+    };
+
+    return {
+      name,
+      password,
+      errorMessage,
+      login,
+    };
+  },
+});
 </script>
