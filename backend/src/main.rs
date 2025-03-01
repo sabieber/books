@@ -8,7 +8,7 @@ use crate::models::{Shelf, User, Book};
 use crate::schema::users::dsl::users;
 use crate::schema::users::name;
 use crate::schema::books::dsl::books;
-use crate::types::{ErrorResponse, ListShelvesResponse, LoginRequest, LoginResponse, RegisterRequest, RegisterResponse, UserIdRequest, CreateShelfRequest, AddBookToShelfRequest, ShelfBooksRequest, RemoveBookFromShelfRequest, RemoveShelfRequest};
+use crate::types::{ErrorResponse, ListShelvesResponse, LoginRequest, LoginResponse, RegisterRequest, RegisterResponse, UserIdRequest, CreateShelfRequest, AddBookToShelfRequest, ShelfBooksRequest, RemoveBookFromShelfRequest, RemoveShelfRequest, BookInfoResponse, BookInfoRequest};
 use argonautica::{Hasher, Verifier};
 use axum::extract::rejection::JsonRejection;
 use axum::{
@@ -56,6 +56,7 @@ async fn main() {
         .route("/api/shelves/books", post(list_shelf_books))
         .route("/api/shelves/remove-book", post(remove_book_from_shelf))
         .route("/api/shelves/remove", post(remove_shelf))
+        .route("/api/books/info", post(get_book_info))
         .layer(cors);
 
     info!("starting server...");
@@ -403,6 +404,31 @@ pub async fn remove_book_from_shelf(Json(payload): Json<RemoveBookFromShelfReque
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!(ErrorResponse {
                 error: format!("Error while removing the book from the shelf: {}", e),
+            })),
+        ),
+    }
+}
+
+/// Fetches book information by book ID.
+///
+/// This route accepts a JSON payload with the following structure:
+/// - `book_id`: The UUID of the book to fetch information for.
+pub async fn get_book_info(Json(payload): Json<BookInfoRequest>) -> impl IntoResponse {
+    let connection = &mut connect();
+
+    let book_id = Uuid::parse_str(&payload.book_id).expect("Invalid book ID");
+
+    match books.filter(schema::books::dsl::id.eq(book_id)).first::<Book>(connection) {
+        Ok(book) => (
+            StatusCode::OK,
+            Json(json!(BookInfoResponse {
+                google_books_id: book.google_books_id,
+            })),
+        ),
+        Err(_) => (
+            StatusCode::NOT_FOUND,
+            Json(json!(ErrorResponse {
+                error: "Book not found.".to_string(),
             })),
         ),
     }

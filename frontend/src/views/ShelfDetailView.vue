@@ -7,10 +7,10 @@
         <span class="loading loading-spinner loading-lg"></span>
       </div>
       <ul v-else-if="books.length" class="space-y-4">
-        <li v-for="book in books" :key="book.id" class="p-4 bg-gray-700 rounded-lg hover:bg-gray-600 transition">
+        <li v-for="book in books" :key="book.id" class="p-4 bg-gray-700 rounded-lg hover:bg-gray-600 transition cursor-pointer" @click="viewBookDetail(book.id)">
           <div class="flex justify-between items-center">
             <h3 class="text-xl font-bold text-white">{{ book.title }}</h3>
-            <button @click="removeBookFromShelf(book.id)" class="btn btn-circle btn-sm btn-error">
+            <button @click.stop="removeBookFromShelf(book.id)" class="btn btn-circle btn-sm btn-error">
               <MinusIcon class="size-3 text-white"/>
             </button>
           </div>
@@ -29,13 +29,14 @@
 
 <script lang="ts">
 import { defineComponent, ref, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { MinusIcon } from "@heroicons/vue/16/solid";
 
 export default defineComponent({
   components: { MinusIcon },
   setup() {
     const route = useRoute();
+    const router = useRouter();
     const books = ref([]);
     const loading = ref(true);
     const shelf = ref({ name: '', description: '' });
@@ -90,6 +91,10 @@ export default defineComponent({
       }
     };
 
+    const viewBookDetail = (id: string) => {
+      router.push({ name: 'book-detail', params: { id } });
+    };
+
     onMounted(() => {
       const shelfId = route.params.id as string;
       fetchShelfBooks(shelfId);
@@ -102,6 +107,7 @@ export default defineComponent({
       toastMessage,
       toastType,
       removeBookFromShelf,
+      viewBookDetail,
     };
   },
 });

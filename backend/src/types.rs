@@ -76,3 +76,14 @@ pub struct ErrorResponse {
 pub struct ListShelvesResponse {
     pub shelves: Vec<serde_json::Value>,
 }
+
+#[derive(Debug, Deserialize)]
+pub struct BookInfoRequest {
+    pub book_id: String,
+}
+
+/// Response type for book information.
+#[derive(Debug, Serialize)]
+pub struct BookInfoResponse {
+    pub google_books_id: Option<String>,
+}
