@@ -31,6 +31,7 @@
 import { defineComponent, ref, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { MagnifyingGlassIcon } from "@heroicons/vue/16/solid";
+import { searchBooks } from '@/api/googleBooksApi';
 
 export default defineComponent({
   components: { MagnifyingGlassIcon },
@@ -41,24 +42,13 @@ export default defineComponent({
     const router = useRouter();
     const route = useRoute();
 
-    const searchBooks = async () => {
+    const searchBooksWrapper = async () => {
       if (!query.value.trim()) {
         return;
       }
       loading.value = true;
-      try {
-        const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query.value)}`);
-        if (response.ok) {
-          const data = await response.json();
-          books.value = data.items || [];
-        } else {
-          console.error('Failed to fetch books:', await response.json());
-        }
-      } catch (error) {
-        console.error('Failed to fetch books:', error);
-      } finally {
-        loading.value = false;
-      }
+      books.value = await searchBooks(query.value);
+      loading.value = false;
     };
 
     const viewBookDetail = (id: string) => {
@@ -69,7 +59,7 @@ export default defineComponent({
       const savedQuery = route.query.q as string;
       if (savedQuery) {
         query.value = savedQuery;
-        searchBooks();
+        searchBooksWrapper();
       }
     });
 
@@ -77,7 +67,7 @@ export default defineComponent({
       query,
       books,
       loading,
-      searchBooks,
+      searchBooks: searchBooksWrapper,
       viewBookDetail,
     };
   },

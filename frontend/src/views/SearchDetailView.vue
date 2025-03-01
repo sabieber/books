@@ -30,6 +30,7 @@ import { defineComponent, ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { PlusIcon } from "@heroicons/vue/16/solid";
 import AddToShelfPopup from '@/components/AddToShelfPopup.vue';
+import { fetchBookDetails } from '@/api/googleBooksApi';
 
 export default defineComponent({
   components: { PlusIcon, AddToShelfPopup },
@@ -41,19 +42,9 @@ export default defineComponent({
     const toastMessage = ref('');
     const toastType = ref('');
 
-    const fetchBookDetails = async (bookId: string) => {
-      try {
-        const response = await fetch(`https://www.googleapis.com/books/v1/volumes/${bookId}`);
-        if (response.ok) {
-          book.value = await response.json();
-        } else {
-          console.error('Failed to fetch book details:', await response.json());
-        }
-      } catch (error) {
-        console.error('Failed to fetch book details:', error);
-      } finally {
-        loading.value = false;
-      }
+    const fetchBookDetailsWrapper = async (bookId: string) => {
+      book.value = await fetchBookDetails(bookId);
+      loading.value = false;
     };
 
     const showToast = ({ message, type }) => {
@@ -66,7 +57,7 @@ export default defineComponent({
 
     onMounted(() => {
       const bookId = route.params.id as string;
-      fetchBookDetails(bookId);
+      fetchBookDetailsWrapper(bookId);
     });
 
     return {
