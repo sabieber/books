@@ -19,11 +19,7 @@
       <div v-else class="text-white text-center">No entries found.</div>
       <button @click="showModal = true" class="btn btn-primary mt-4">Track Progress</button>
     </div>
-    <div v-if="toastMessage" class="toast toast-top toast-center">
-      <div :class="`alert ${toastType}`">
-        <span>{{ toastMessage }}</span>
-      </div>
-    </div>
+    <Toast ref="toast" />
     <TrackProgressModal v-if="showModal" @close="showModal = false" @submit="trackProgress" :initialProgress="latestProgress" />
   </div>
 </template>
@@ -32,18 +28,18 @@
 import { defineComponent, ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import TrackProgressModal from '@/components/TrackProgressModal.vue';
+import Toast from '@/components/Toast.vue';
 
 export default defineComponent({
-  components: { TrackProgressModal },
+  components: { TrackProgressModal, Toast },
   setup() {
     const route = useRoute();
     const bookId = ref('');
     const entries = ref([]);
     const loading = ref(true);
     const showModal = ref(false);
-    const toastMessage = ref('');
-    const toastType = ref('');
     const latestProgress = ref(0);
+    const toast = ref(null);
 
     const fetchReadingEntries = async (readingId: string) => {
       try {
@@ -69,14 +65,6 @@ export default defineComponent({
       }
     };
 
-    const showToast = ({ message, type }) => {
-      toastMessage.value = message;
-      toastType.value = type;
-      setTimeout(() => {
-        toastMessage.value = '';
-      }, 3000);
-    };
-
     const trackProgress = async (progress: number, readAt: string) => {
       try {
         const userId = localStorage.getItem('user_id');
@@ -90,10 +78,10 @@ export default defineComponent({
           showModal.value = false;
         } else {
           const errorData = await response.json();
-          showToast({ message: errorData.error, type: 'alert-error' });
+          toast.value.showToast({ message: errorData.error, type: 'alert-error' });
         }
       } catch (error) {
-        showToast({ message: 'Failed to track progress.', type: 'alert-error' });
+        toast.value.showToast({ message: 'Failed to track progress.', type: 'alert-error' });
       }
     };
 
@@ -106,11 +94,9 @@ export default defineComponent({
       entries,
       loading,
       showModal,
-      toastMessage,
-      toastType,
-      showToast,
       trackProgress,
       latestProgress,
+      toast,
     };
   },
 });

@@ -17,11 +17,7 @@
       <div v-else class="text-white text-center">Book not found.</div>
     </div>
     <AddToShelfPopup v-if="showPopup" @close="showPopup = false" @toast="showToast" :book="book" />
-    <div v-if="toastMessage" class="toast toast-top toast-center">
-      <div :class="`alert ${toastType}`">
-        <span>{{ toastMessage }}</span>
-      </div>
-    </div>
+    <Toast ref="toast" />
   </div>
 </template>
 
@@ -31,16 +27,16 @@ import { useRoute } from 'vue-router';
 import { PlusIcon } from "@heroicons/vue/16/solid";
 import AddToShelfPopup from '@/components/AddToShelfPopup.vue';
 import { fetchBookDetails } from '@/api/googleBooksApi';
+import Toast from '@/components/Toast.vue';
 
 export default defineComponent({
-  components: { PlusIcon, AddToShelfPopup },
+  components: { PlusIcon, AddToShelfPopup, Toast },
   setup() {
     const route = useRoute();
     const book = ref(null);
     const loading = ref(true);
     const showPopup = ref(false);
-    const toastMessage = ref('');
-    const toastType = ref('');
+    const toast = ref(null);
 
     const fetchBookDetailsWrapper = async (bookId: string) => {
       book.value = await fetchBookDetails(bookId);
@@ -48,11 +44,7 @@ export default defineComponent({
     };
 
     const showToast = ({ message, type }) => {
-      toastMessage.value = message;
-      toastType.value = type;
-      setTimeout(() => {
-        toastMessage.value = '';
-      }, 3000);
+      toast.value.showToast({ message, type });
     };
 
     onMounted(() => {
@@ -64,9 +56,8 @@ export default defineComponent({
       book,
       loading,
       showPopup,
-      toastMessage,
-      toastType,
       showToast,
+      toast,
     };
   },
 });

@@ -23,11 +23,7 @@
       </ul>
       <div v-else class="text-white text-center">No shelves found.</div>
     </div>
-    <div v-if="toastMessage" class="toast toast-top toast-center">
-      <div :class="`alert ${toastType}`">
-        <span>{{ toastMessage }}</span>
-      </div>
-    </div>
+    <Toast ref="toast" />
   </div>
 </template>
 
@@ -36,18 +32,19 @@ import { defineComponent, ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { MinusIcon } from "@heroicons/vue/16/solid";
 import CreateShelfModal from '@/components/CreateShelfModal.vue';
+import Toast from '@/components/Toast.vue';
 
 export default defineComponent({
   components: {
     CreateShelfModal,
     MinusIcon,
+    Toast,
   },
   setup() {
     const shelves = ref<Array<{ id: string, name: string, description: string }>>([]);
     const loading = ref(true);
-    const toastMessage = ref('');
-    const toastType = ref('');
     const router = useRouter();
+    const toast = ref(null);
 
     const fetchShelves = async () => {
       const userId = localStorage.getItem('user_id');
@@ -86,22 +83,15 @@ export default defineComponent({
           body: JSON.stringify({ shelf_id: shelfId }),
         });
         if (response.ok) {
-          toastMessage.value = 'Shelf removed successfully.';
-          toastType.value = 'alert-success';
+          toast.value.showToast({ message: 'Shelf removed successfully.', type: 'alert-success' });
           shelves.value = shelves.value.filter(shelf => shelf.id !== shelfId);
         } else {
           console.error('Failed to remove shelf:', await response.json());
-          toastMessage.value = 'Failed to remove shelf.';
-          toastType.value = 'alert-error';
+          toast.value.showToast({ message: 'Failed to remove shelf.', type: 'alert-error' });
         }
       } catch (error) {
         console.error('Failed to remove shelf:', error);
-        toastMessage.value = 'Failed to remove shelf.';
-        toastType.value = 'alert-error';
-      } finally {
-        setTimeout(() => {
-          toastMessage.value = '';
-        }, 3000);
+        toast.value.showToast({ message: 'Failed to remove shelf.', type: 'alert-error' });
       }
     };
 
@@ -110,11 +100,10 @@ export default defineComponent({
     return {
       shelves,
       loading,
-      toastMessage,
-      toastType,
       fetchShelves,
       goToShelf,
       removeShelf,
+      toast,
     };
   },
 });

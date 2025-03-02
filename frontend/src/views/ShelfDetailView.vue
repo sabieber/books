@@ -19,11 +19,7 @@
       </ul>
       <div v-else class="text-white text-center">No books found.</div>
     </div>
-    <div v-if="toastMessage" class="toast toast-top toast-center">
-      <div :class="`alert ${toastType}`">
-        <span>{{ toastMessage }}</span>
-      </div>
-    </div>
+    <Toast ref="toast" />
   </div>
 </template>
 
@@ -31,17 +27,17 @@
 import { defineComponent, ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { MinusIcon } from "@heroicons/vue/16/solid";
+import Toast from '@/components/Toast.vue';
 
 export default defineComponent({
-  components: { MinusIcon },
+  components: { MinusIcon, Toast },
   setup() {
     const route = useRoute();
     const router = useRouter();
     const books = ref([]);
     const loading = ref(true);
     const shelf = ref({ name: '', description: '' });
-    const toastMessage = ref('');
-    const toastType = ref('');
+    const toast = ref(null);
 
     const fetchShelfBooks = async (shelfId: string) => {
       try {
@@ -72,22 +68,15 @@ export default defineComponent({
           body: JSON.stringify({ book_id: bookId }),
         });
         if (response.ok) {
-          toastMessage.value = 'Book removed from shelf successfully.';
-          toastType.value = 'alert-success';
+          toast.value.showToast({ message: 'Book removed from shelf successfully.', type: 'alert-success' });
           books.value = books.value.filter(book => book.id !== bookId);
         } else {
           console.error('Failed to remove book from shelf:', await response.json());
-          toastMessage.value = 'Failed to remove book from shelf.';
-          toastType.value = 'alert-error';
+          toast.value.showToast({ message: 'Failed to remove book from shelf.', type: 'alert-error' });
         }
       } catch (error) {
         console.error('Failed to remove book from shelf:', error);
-        toastMessage.value = 'Failed to remove book from shelf.';
-        toastType.value = 'alert-error';
-      } finally {
-        setTimeout(() => {
-          toastMessage.value = '';
-        }, 3000);
+        toast.value.showToast({ message: 'Failed to remove book from shelf.', type: 'alert-error' });
       }
     };
 
@@ -104,10 +93,9 @@ export default defineComponent({
       books,
       loading,
       shelf,
-      toastMessage,
-      toastType,
       removeBookFromShelf,
       viewBookDetail,
+      toast,
     };
   },
 });

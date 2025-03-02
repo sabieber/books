@@ -24,6 +24,7 @@
       </div>
       <div v-else class="text-white text-center">No books found.</div>
     </div>
+    <Toast ref="toast" />
   </div>
 </template>
 
@@ -32,15 +33,17 @@ import { defineComponent, ref, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { MagnifyingGlassIcon } from "@heroicons/vue/16/solid";
 import { searchBooks } from '@/api/googleBooksApi';
+import Toast from '@/components/Toast.vue';
 
 export default defineComponent({
-  components: { MagnifyingGlassIcon },
+  components: { MagnifyingGlassIcon, Toast },
   setup() {
     const query = ref('');
     const books = ref<Array<any>>([]);
     const loading = ref(false);
     const router = useRouter();
     const route = useRoute();
+    const toast = ref(null);
 
     const searchBooksWrapper = async () => {
       if (!query.value.trim()) {
@@ -69,6 +72,7 @@ export default defineComponent({
       loading,
       searchBooks: searchBooksWrapper,
       viewBookDetail,
+      toast,
     };
   },
 });

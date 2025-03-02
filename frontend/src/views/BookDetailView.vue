@@ -25,11 +25,7 @@
       </div>
       <div v-else class="text-white text-center">Book not found.</div>
     </div>
-    <div v-if="toastMessage" class="toast toast-top toast-center">
-      <div :class="`alert ${toastType}`">
-        <span>{{ toastMessage }}</span>
-      </div>
-    </div>
+    <Toast ref="toast" />
     <StartReadingModal v-if="showStartReadingModal" @close="showStartReadingModal = false" @submit="startReadingSession" :initialPages="book?.volumeInfo.pageCount || 0" />
   </div>
 </template>
@@ -40,18 +36,18 @@ import { useRoute, useRouter } from 'vue-router';
 import { PlusIcon } from "@heroicons/vue/16/solid";
 import { fetchBookDetails } from '@/api/googleBooksApi';
 import StartReadingModal from '@/components/StartReadingModal.vue';
+import Toast from '@/components/Toast.vue';
 
 export default defineComponent({
-  components: { PlusIcon, StartReadingModal },
+  components: { PlusIcon, StartReadingModal, Toast },
   setup() {
     const route = useRoute();
     const router = useRouter();
     const book = ref(null);
     const readings = ref([]);
     const loading = ref(true);
-    const toastMessage = ref('');
-    const toastType = ref('');
     const showStartReadingModal = ref(false);
+    const toast = ref(null);
 
     const fetchBookInfo = async (bookId: string) => {
       try {
@@ -82,14 +78,6 @@ export default defineComponent({
       loading.value = false;
     };
 
-    const showToast = ({ message, type }) => {
-      toastMessage.value = message;
-      toastType.value = type;
-      setTimeout(() => {
-        toastMessage.value = '';
-      }, 3000);
-    };
-
     const viewReadingDetail = (readingId: string) => {
       router.push({ name: 'reading-detail', params: { id: readingId } });
     };
@@ -107,10 +95,10 @@ export default defineComponent({
           showStartReadingModal.value = false;
         } else {
           const errorData = await response.json();
-          showToast({ message: errorData.error, type: 'alert-error' });
+          toast.value.showToast({ message: errorData.error, type: 'alert-error' });
         }
       } catch (error) {
-        showToast({ message: 'Failed to start reading session.', type: 'alert-error' });
+        toast.value.showToast({ message: 'Failed to start reading session.', type: 'alert-error' });
       }
     };
 
@@ -123,12 +111,10 @@ export default defineComponent({
       book,
       readings,
       loading,
-      toastMessage,
-      toastType,
-      showToast,
       viewReadingDetail,
       startReadingSession,
       showStartReadingModal,
+      toast,
     };
   },
 });
