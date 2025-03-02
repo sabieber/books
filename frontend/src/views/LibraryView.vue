@@ -1,30 +1,26 @@
 <template>
-  <div class="dark min-h-screen flex items-center justify-center bg-gray-900">
-    <div class="w-full max-w-md bg-gray-800 rounded-lg shadow-md p-6">
-      <div class="flex justify-between items-center mb-4">
-        <h2 class="text-2xl font-semibold text-white">Library</h2>
-        <CreateShelfModal @shelfCreated="fetchShelves"/>
-      </div>
-      <div v-if="loading" class="flex justify-center">
-        <span class="loading loading-spinner loading-lg"></span>
-      </div>
-      <ul v-else-if="shelves.length" class="space-y-4">
-        <li v-for="shelf in shelves" :key="shelf.id" class="p-4 bg-gray-700 rounded-lg hover:bg-gray-600 transition">
-          <div class="flex justify-between items-center cursor-pointer" @click="goToShelf(shelf.id)">
-            <div>
-              <h3 class="text-xl font-bold text-white">{{ shelf.name }}</h3>
-              <p class="text-sm text-gray-400">{{ shelf.description }}</p>
-            </div>
-            <button @click.stop="removeShelf(shelf.id)" class="btn btn-circle btn-sm btn-error">
-              <MinusIcon class="size-3 text-white"/>
-            </button>
-          </div>
-        </li>
-      </ul>
-      <div v-else class="text-white text-center">No shelves found.</div>
+  <PageContainer title="Library">
+    <div class="flex justify-between items-center mb-4">
+      <CreateShelfModal @shelfCreated="fetchShelves"/>
     </div>
-    <Toast ref="toast" />
-  </div>
+    <div v-if="loading" class="flex justify-center">
+      <span class="loading loading-spinner loading-lg"></span>
+    </div>
+    <ul v-else-if="shelves.length" class="space-y-4">
+      <li v-for="shelf in shelves" :key="shelf.id" class="p-4 bg-gray-700 rounded-lg hover:bg-gray-600 transition">
+        <div class="flex justify-between items-center cursor-pointer" @click="goToShelf(shelf.id)">
+          <div>
+            <h3 class="text-xl font-bold text-white">{{ shelf.name }}</h3>
+            <p class="text-sm text-gray-400">{{ shelf.description }}</p>
+          </div>
+          <button @click.stop="removeShelf(shelf.id)" class="btn btn-circle btn-sm btn-error">
+            <MinusIcon class="size-3 text-white"/>
+          </button>
+        </div>
+      </li>
+    </ul>
+    <div v-else class="text-white text-center">No shelves found.</div>
+  </PageContainer>
 </template>
 
 <script lang="ts">
@@ -32,12 +28,14 @@ import { defineComponent, ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { MinusIcon } from "@heroicons/vue/16/solid";
 import CreateShelfModal from '@/components/CreateShelfModal.vue';
+import PageContainer from '@/components/PageContainer.vue';
 import Toast from '@/components/Toast.vue';
 
 export default defineComponent({
   components: {
     CreateShelfModal,
     MinusIcon,
+    PageContainer,
     Toast,
   },
   setup() {

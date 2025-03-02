@@ -1,37 +1,34 @@
 <template>
-  <div class="dark min-h-screen flex items-center justify-center bg-gray-900">
-    <div class="w-full max-w-md bg-gray-800 rounded-lg shadow-md p-6">
-      <div v-if="loading" class="flex justify-center">
-        <span class="loading loading-spinner loading-lg"></span>
-      </div>
-      <div v-else-if="entries.length" class="text-white">
-        <h2 class="text-2xl font-bold mb-4">Reading Entries</h2>
-        <ul class="space-y-4">
-          <li v-for="entry in entries" :key="entry.id" class="p-4 bg-gray-700 rounded-lg">
-            <div class="flex justify-between items-center">
-              <span>{{ entry.read_at }}</span>
-              <span>{{ entry.progress }} pages</span>
-            </div>
-            <p class="text-sm text-gray-400">{{ entry.mode }}</p>
-          </li>
-        </ul>
-      </div>
-      <div v-else class="text-white text-center">No entries found.</div>
-      <button @click="showModal = true" class="btn btn-primary mt-4">Track Progress</button>
+  <PageContainer title="Reading Entries">
+    <div v-if="loading" class="flex justify-center">
+      <span class="loading loading-spinner loading-lg"></span>
     </div>
-    <Toast ref="toast" />
+    <div v-else-if="entries.length" class="text-white">
+      <ul class="space-y-4">
+        <li v-for="entry in entries" :key="entry.id" class="p-4 bg-gray-700 rounded-lg">
+          <div class="flex justify-between items-center">
+            <span>{{ entry.read_at }}</span>
+            <span>{{ entry.progress }} pages</span>
+          </div>
+          <p class="text-sm text-gray-400">{{ entry.mode }}</p>
+        </li>
+      </ul>
+    </div>
+    <div v-else class="text-white text-center">No entries found.</div>
+    <button @click="showModal = true" class="btn btn-primary mt-4">Track Progress</button>
     <TrackProgressModal v-if="showModal" @close="showModal = false" @submit="trackProgress" :initialProgress="latestProgress" />
-  </div>
+  </PageContainer>
 </template>
 
 <script lang="ts">
 import { defineComponent, ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import TrackProgressModal from '@/components/TrackProgressModal.vue';
+import PageContainer from '@/components/PageContainer.vue';
 import Toast from '@/components/Toast.vue';
 
 export default defineComponent({
-  components: { TrackProgressModal, Toast },
+  components: { TrackProgressModal, PageContainer, Toast },
   setup() {
     const route = useRoute();
     const bookId = ref('');

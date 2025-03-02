@@ -1,35 +1,33 @@
 <template>
-  <div class="dark min-h-screen flex items-center justify-center bg-gray-900">
-    <div class="w-full max-w-md bg-gray-800 rounded-lg shadow-md p-6">
-      <h2 class="text-2xl font-semibold text-white text-center mb-4">Login</h2>
-      <div role="alert" class="alert alert-error mb-4" v-show="errorMessage">
-        <ExclamationTriangleIcon class="size-6 text-white"/>
-        <span v-text="errorMessage"></span>
-      </div>
-      <label class="input input-bordered flex items-center gap-2 mb-4">
-        <UserIcon class="size-6 text-blue-500" />
-        <input type="text" class="grow" placeholder="Name" v-model="name"/>
-      </label>
-      <label class="input input-bordered flex items-center gap-2 mb-4">
-        <KeyIcon class="size-6 text-blue-500" />
-        <input type="password" class="grow" placeholder="Password" v-model="password"/>
-      </label>
-      <button class="btn btn-block btn-primary mb-4" @click="login">Login</button>
-      <RouterLink to="/register">
-        <button class="btn btn-block">Register</button>
-      </RouterLink>
+  <PageContainer title="Login">
+    <div role="alert" class="alert alert-error mb-4" v-show="errorMessage">
+      <ExclamationTriangleIcon class="size-6 text-white"/>
+      <span v-text="errorMessage"></span>
     </div>
-  </div>
+    <label class="input input-bordered flex items-center gap-2 mb-4">
+      <UserIcon class="size-6 text-blue-500" />
+      <input type="text" class="grow" placeholder="Name" v-model="name"/>
+    </label>
+    <label class="input input-bordered flex items-center gap-2 mb-4">
+      <KeyIcon class="size-6 text-blue-500" />
+      <input type="password" class="grow" placeholder="Password" v-model="password"/>
+    </label>
+    <button class="btn btn-block btn-primary mb-4" @click="login">Login</button>
+    <RouterLink to="/register">
+      <button class="btn btn-block">Register</button>
+    </RouterLink>
+  </PageContainer>
 </template>
 
 <script lang="ts">
 import { defineComponent, ref } from 'vue';
 import { RouterLink } from "vue-router";
 import { UserIcon, KeyIcon, ExclamationTriangleIcon } from "@heroicons/vue/16/solid";
+import PageContainer from '@/components/PageContainer.vue';
 import router from "@/router";
 
 export default defineComponent({
-  components: { RouterLink, UserIcon, KeyIcon, ExclamationTriangleIcon },
+  components: { RouterLink, UserIcon, KeyIcon, ExclamationTriangleIcon, PageContainer },
   setup() {
     const name = ref('');
     const password = ref('');

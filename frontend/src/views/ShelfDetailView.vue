@@ -1,36 +1,32 @@
 <template>
-  <div class="dark min-h-screen flex items-center justify-center bg-gray-900">
-    <div class="w-full max-w-md bg-gray-800 rounded-lg shadow-md p-6">
-      <h2 class="text-2xl font-semibold text-white mb-2">{{ shelf.name }}</h2>
-      <p class="text-sm text-gray-400 mb-4">{{ shelf.description }}</p>
-      <div v-if="loading" class="flex justify-center">
-        <span class="loading loading-spinner loading-lg"></span>
-      </div>
-      <ul v-else-if="books.length" class="space-y-4">
-        <li v-for="book in books" :key="book.id" class="p-4 bg-gray-700 rounded-lg hover:bg-gray-600 transition cursor-pointer" @click="viewBookDetail(book.id)">
-          <div class="flex justify-between items-center">
-            <h3 class="text-xl font-bold text-white">{{ book.title }}</h3>
-            <button @click.stop="removeBookFromShelf(book.id)" class="btn btn-circle btn-sm btn-error">
-              <MinusIcon class="size-3 text-white"/>
-            </button>
-          </div>
-          <p class="text-sm text-gray-400">{{ book.author }}</p>
-        </li>
-      </ul>
-      <div v-else class="text-white text-center">No books found.</div>
+  <PageContainer :title="shelf.name">
+    <p class="text-sm text-gray-400 mb-4">{{ shelf.description }}</p>
+    <div v-if="loading" class="flex justify-center">
+      <span class="loading loading-spinner loading-lg"></span>
     </div>
-    <Toast ref="toast" />
-  </div>
+    <ul v-else-if="books.length" class="space-y-4">
+      <li v-for="book in books" :key="book.id" class="p-4 bg-gray-700 rounded-lg hover:bg-gray-600 transition cursor-pointer" @click="viewBookDetail(book.id)">
+        <div class="flex justify-between items-center">
+          <h3 class="text-xl font-bold text-white">{{ book.title }}</h3>
+          <button @click.stop="removeBookFromShelf(book.id)" class="btn btn-circle btn-sm btn-error">
+            <MinusIcon class="size-3 text-white"/>
+          </button>
+        </div>
+        <p class="text-sm text-gray-400">{{ book.author }}</p>
+      </li>
+    </ul>
+    <div v-else class="text-white text-center">No books found.</div>
+  </PageContainer>
 </template>
 
 <script lang="ts">
 import { defineComponent, ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { MinusIcon } from "@heroicons/vue/16/solid";
-import Toast from '@/components/Toast.vue';
+import PageContainer from '@/components/PageContainer.vue';
 
 export default defineComponent({
-  components: { MinusIcon, Toast },
+  components: { MinusIcon, PageContainer },
   setup() {
     const route = useRoute();
     const router = useRouter();

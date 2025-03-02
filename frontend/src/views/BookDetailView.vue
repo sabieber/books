@@ -1,33 +1,30 @@
 <template>
-  <div class="dark min-h-screen flex items-center justify-center bg-gray-900">
-    <div class="w-full max-w-md bg-gray-800 rounded-lg shadow-md p-6 relative">
-      <div v-if="loading" class="flex justify-center">
-        <span class="loading loading-spinner loading-lg"></span>
-      </div>
-      <div v-else-if="book" class="text-white">
-        <img :src="book.volumeInfo.imageLinks?.thumbnail" alt="Book cover" class="w-24 h-32 object-cover mb-4" />
-        <h2 class="text-2xl font-bold mb-2">{{ book.volumeInfo.title }}</h2>
-        <p class="mb-2">{{ book.volumeInfo.authors?.join(', ') }}</p>
-        <p class="mb-2">{{ book.volumeInfo.publishedDate }}</p>
-        <p class="mb-2" v-html="book.volumeInfo.description"></p>
-        <button @click="showStartReadingModal = true" class="btn btn-primary mt-4">Start Reading</button>
-        <div v-if="readings.length" class="mt-4">
-          <h3 class="text-xl font-semibold mb-2">Readings</h3>
-          <ul class="space-y-2">
-            <li v-for="reading in readings" :key="reading.id" class="p-2 bg-gray-700 rounded-lg hover:bg-gray-600 transition cursor-pointer" @click="viewReadingDetail(reading.id)">
-              <div class="flex justify-between items-center">
-                <span>{{ reading.started_at }} - {{ reading.finished_at || 'Ongoing' }}</span>
-                <span>{{ reading.progress }} / {{ reading.total_pages }} pages</span>
-              </div>
-            </li>
-          </ul>
-        </div>
-      </div>
-      <div v-else class="text-white text-center">Book not found.</div>
+  <PageContainer title="Book Details">
+    <div v-if="loading" class="flex justify-center">
+      <span class="loading loading-spinner loading-lg"></span>
     </div>
-    <Toast ref="toast" />
+    <div v-else-if="book" class="text-white">
+      <img :src="book.volumeInfo.imageLinks?.thumbnail" alt="Book cover" class="w-24 h-32 object-cover mb-4" />
+      <h2 class="text-2xl font-bold mb-2">{{ book.volumeInfo.title }}</h2>
+      <p class="mb-2">{{ book.volumeInfo.authors?.join(', ') }}</p>
+      <p class="mb-2">{{ book.volumeInfo.publishedDate }}</p>
+      <p class="mb-2" v-html="book.volumeInfo.description"></p>
+      <button @click="showStartReadingModal = true" class="btn btn-primary mt-4">Start Reading</button>
+      <div v-if="readings.length" class="mt-4">
+        <h3 class="text-xl font-semibold mb-2">Readings</h3>
+        <ul class="space-y-2">
+          <li v-for="reading in readings" :key="reading.id" class="p-2 bg-gray-700 rounded-lg hover:bg-gray-600 transition cursor-pointer" @click="viewReadingDetail(reading.id)">
+            <div class="flex justify-between items-center">
+              <span>{{ reading.started_at }} - {{ reading.finished_at || 'Ongoing' }}</span>
+              <span>{{ reading.progress }} / {{ reading.total_pages }} pages</span>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div v-else class="text-white text-center">Book not found.</div>
     <StartReadingModal v-if="showStartReadingModal" @close="showStartReadingModal = false" @submit="startReadingSession" :initialPages="book?.volumeInfo.pageCount || 0" />
-  </div>
+  </PageContainer>
 </template>
 
 <script lang="ts">
@@ -36,10 +33,11 @@ import { useRoute, useRouter } from 'vue-router';
 import { PlusIcon } from "@heroicons/vue/16/solid";
 import { fetchBookDetails } from '@/api/googleBooksApi';
 import StartReadingModal from '@/components/StartReadingModal.vue';
+import PageContainer from '@/components/PageContainer.vue';
 import Toast from '@/components/Toast.vue';
 
 export default defineComponent({
-  components: { PlusIcon, StartReadingModal, Toast },
+  components: { PlusIcon, StartReadingModal, PageContainer, Toast },
   setup() {
     const route = useRoute();
     const router = useRouter();
