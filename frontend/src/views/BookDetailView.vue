@@ -1,11 +1,10 @@
 <template>
-  <PageContainer title="Book Details">
+  <PageContainer :title="book.volumeInfo.title">
     <div v-if="loading" class="flex justify-center">
       <span class="loading loading-spinner loading-lg"></span>
     </div>
     <div v-else-if="book" class="text-white">
       <img :src="book.volumeInfo.imageLinks?.thumbnail" alt="Book cover" class="w-24 h-32 object-cover mb-4" />
-      <h2 class="text-2xl font-bold mb-2">{{ book.volumeInfo.title }}</h2>
       <p class="mb-2">{{ book.volumeInfo.authors?.join(', ') }}</p>
       <p class="mb-2">{{ book.volumeInfo.publishedDate }}</p>
       <p class="mb-2" v-html="book.volumeInfo.description"></p>
