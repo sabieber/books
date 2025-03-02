@@ -183,6 +183,7 @@ dependencies = [
  "axum-extra",
  "chrono",
  "diesel",
+ "diesel-derive-enum",
  "dotenvy",
  "serde",
  "serde_json",
@@ -407,6 +408,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "diesel-derive-enum"
+version = "2.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "81c5131a2895ef64741dad1d483f358c2a229a3a2d1b256778cdc5e146db64d4"
+dependencies = [
+ "heck 0.4.1",
+ "proc-macro2 1.0.93",
+ "quote 1.0.38",
+ "syn 2.0.96",
+]
+
+[[package]]
 name = "diesel_derives"
 version = "2.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -442,7 +455,7 @@ checksum = "c5d9abe6314103864cc2d8901b7ae224e0ab1a103a0a416661b4097b0779b607"
 dependencies = [
  "darling",
  "either",
- "heck",
+ "heck 0.5.0",
  "proc-macro2 1.0.93",
  "quote 1.0.38",
  "syn 2.0.96",
@@ -591,6 +604,12 @@ dependencies = [
  "byteorder",
  "scopeguard 0.3.3",
 ]
+
+[[package]]
+name = "heck"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "95505c38b4572b2d910cecb0281560f54b440a19336cbbcb27bf6ce6adc6f5a8"
 
 [[package]]
 name = "heck"

@@ -10,6 +10,18 @@
         <p class="mb-2">{{ book.volumeInfo.authors?.join(', ') }}</p>
         <p class="mb-2">{{ book.volumeInfo.publishedDate }}</p>
         <p class="mb-2" v-html="book.volumeInfo.description"></p>
+        <button @click="showStartReadingModal = true" class="btn btn-primary mt-4">Start Reading</button>
+        <div v-if="readings.length" class="mt-4">
+          <h3 class="text-xl font-semibold mb-2">Readings</h3>
+          <ul class="space-y-2">
+            <li v-for="reading in readings" :key="reading.id" class="p-2 bg-gray-700 rounded-lg hover:bg-gray-600 transition cursor-pointer" @click="viewReadingDetail(reading.id)">
+              <div class="flex justify-between items-center">
+                <span>{{ reading.started_at }} - {{ reading.finished_at || 'Ongoing' }}</span>
+                <span>{{ reading.progress }} / {{ reading.total_pages }} pages</span>
+              </div>
+            </li>
+          </ul>
+        </div>
       </div>
       <div v-else class="text-white text-center">Book not found.</div>
     </div>
@@ -18,24 +30,28 @@
         <span>{{ toastMessage }}</span>
       </div>
     </div>
+    <StartReadingModal v-if="showStartReadingModal" @close="showStartReadingModal = false" @submit="startReadingSession" :initialPages="book?.volumeInfo.pageCount || 0" />
   </div>
 </template>
 
 <script lang="ts">
 import { defineComponent, ref, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { PlusIcon } from "@heroicons/vue/16/solid";
-import AddToShelfPopup from '@/components/AddToShelfPopup.vue';
 import { fetchBookDetails } from '@/api/googleBooksApi';
+import StartReadingModal from '@/components/StartReadingModal.vue';
 
 export default defineComponent({
-  components: { PlusIcon },
+  components: { PlusIcon, StartReadingModal },
   setup() {
     const route = useRoute();
+    const router = useRouter();
     const book = ref(null);
+    const readings = ref([]);
     const loading = ref(true);
     const toastMessage = ref('');
     const toastType = ref('');
+    const showStartReadingModal = ref(false);
 
     const fetchBookInfo = async (bookId: string) => {
       try {
@@ -46,6 +62,7 @@ export default defineComponent({
         });
         if (response.ok) {
           const data = await response.json();
+          readings.value = data.readings;
           return data.google_books_id;
         } else {
           console.error('Failed to fetch book info:', await response.json());
@@ -73,6 +90,30 @@ export default defineComponent({
       }, 3000);
     };
 
+    const viewReadingDetail = (readingId: string) => {
+      router.push({ name: 'reading-detail', params: { id: readingId } });
+    };
+
+    const startReadingSession = async (totalPages: number) => {
+      try {
+        const userId = localStorage.getItem('user_id');
+        const response = await fetch('http://localhost:3000/api/books/start-reading', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ book_id: route.params.id, user_id: userId, total_pages: totalPages }),
+        });
+        if (response.ok) {
+          fetchBookDetailsWrapper(route.params.id as string);
+          showStartReadingModal.value = false;
+        } else {
+          const errorData = await response.json();
+          showToast({ message: errorData.error, type: 'alert-error' });
+        }
+      } catch (error) {
+        showToast({ message: 'Failed to start reading session.', type: 'alert-error' });
+      }
+    };
+
     onMounted(() => {
       const bookId = route.params.id as string;
       fetchBookDetailsWrapper(bookId);
@@ -80,10 +121,14 @@ export default defineComponent({
 
     return {
       book,
+      readings,
       loading,
       toastMessage,
       toastType,
       showToast,
+      viewReadingDetail,
+      startReadingSession,
+      showStartReadingModal,
     };
   },
 });

@@ -13,6 +13,7 @@ tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
 serde = { version = "1.0.217", features = ["derive"] }
 serde_json = "1.0.137"
 diesel = { version = "2.2.6", features = ["postgres", "uuid", "chrono"] }
+diesel-derive-enum = { version = "2.1.0", features = ["postgres"] }
 dotenvy = "0.15.7"
 uuid = { version = "1.12.1", features = ["v4"] }
 argonautica = "0.2.0"
