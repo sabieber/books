@@ -1,8 +1,8 @@
 <template>
   <PageContainer title="Library">
-    <div class="flex justify-between items-center mb-4">
+    <template #title-button>
       <CreateShelfModal @shelfCreated="fetchShelves"/>
-    </div>
+    </template>
     <div v-if="loading" class="flex justify-center">
       <span class="loading loading-spinner loading-lg"></span>
     </div>

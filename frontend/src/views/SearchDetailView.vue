@@ -1,8 +1,10 @@
 <template>
   <PageContainer title="Book Details">
-    <button @click="showPopup = true" class="btn btn-circle btn-primary absolute top-4 right-4 text-white">
-      <PlusIcon class="size-6 text-white"/>
-    </button>
+    <template #title-button>
+      <button @click="showPopup = true" class="btn btn-circle btn-primary text-white">
+        <PlusIcon class="size-6 text-white"/>
+      </button>
+    </template>
     <div v-if="loading" class="flex justify-center">
       <span class="loading loading-spinner loading-lg"></span>
     </div>

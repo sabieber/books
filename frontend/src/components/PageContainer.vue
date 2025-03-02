@@ -3,6 +3,7 @@
     <div class="w-full max-w-lg rounded-lg shadow-md p-6 flex flex-col flex-grow">
       <div class="flex justify-between items-center mb-4">
         <h2 class="text-2xl font-semibold text-white">{{ title }}</h2>
+        <slot name="title-button"></slot>
       </div>
       <slot></slot>
     </div>
