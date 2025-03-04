@@ -7,21 +7,44 @@
       </div>
       <slot></slot>
     </div>
-    <Toast ref="toast" />
+    <div v-if="toastMessage" class="toast toast-top toast-center pt-16">
+      <div :class="`alert ${toastType}`">
+        <span>{{ toastMessage }}</span>
+      </div>
+    </div>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
-import Toast from '@/components/Toast.vue';
+import { defineComponent, ref } from 'vue';
 
 export default defineComponent({
-  components: { Toast },
   props: {
     title: {
       type: String,
       required: true
     }
+  },
+  setup(_, { expose }) {
+    const toastMessage = ref('');
+    const toastType = ref('');
+
+    const showToast = ({ message, type }: { message: string; type: string }) => {
+      toastMessage.value = message;
+      toastType.value = type;
+      setTimeout(() => {
+        toastMessage.value = '';
+        toastType.value = '';
+      }, 3000);
+    };
+
+    expose({ showToast });
+
+    return {
+      toastMessage,
+      toastType,
+      showToast,
+    };
   }
 });
 </script>
