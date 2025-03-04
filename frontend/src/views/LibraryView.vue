@@ -1,5 +1,5 @@
 <template>
-  <PageContainer title="Library">
+  <PageContainer title="Library" ref="pageContainer">
     <template #title-button>
       <CreateShelfModal @shelfCreated="fetchShelves"/>
     </template>
@@ -29,20 +29,18 @@ import { useRouter } from 'vue-router';
 import { MinusIcon } from "@heroicons/vue/16/solid";
 import CreateShelfModal from '@/components/CreateShelfModal.vue';
 import PageContainer from '@/components/PageContainer.vue';
-import Toast from '@/components/Toast.vue';
 
 export default defineComponent({
   components: {
     CreateShelfModal,
     MinusIcon,
     PageContainer,
-    Toast,
   },
   setup() {
     const shelves = ref<Array<{ id: string, name: string, description: string }>>([]);
     const loading = ref(true);
     const router = useRouter();
-    const toast = ref(null);
+    const pageContainer = ref(null);
 
     const fetchShelves = async () => {
       const userId = localStorage.getItem('user_id');
@@ -81,15 +79,15 @@ export default defineComponent({
           body: JSON.stringify({ shelf_id: shelfId }),
         });
         if (response.ok) {
-          toast.value.showToast({ message: 'Shelf removed successfully.', type: 'alert-success' });
+          pageContainer.value.showToast({ message: 'Shelf removed successfully.', type: 'alert-success' });
           shelves.value = shelves.value.filter(shelf => shelf.id !== shelfId);
         } else {
           console.error('Failed to remove shelf:', await response.json());
-          toast.value.showToast({ message: 'Failed to remove shelf.', type: 'alert-error' });
+          pageContainer.value.showToast({ message: 'Failed to remove shelf.', type: 'alert-error' });
         }
       } catch (error) {
         console.error('Failed to remove shelf:', error);
-        toast.value.showToast({ message: 'Failed to remove shelf.', type: 'alert-error' });
+        pageContainer.value.showToast({ message: 'Failed to remove shelf.', type: 'alert-error' });
       }
     };
 
@@ -101,7 +99,7 @@ export default defineComponent({
       fetchShelves,
       goToShelf,
       removeShelf,
-      toast,
+      pageContainer,
     };
   },
 });

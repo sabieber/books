@@ -1,5 +1,5 @@
 <template>
-  <PageContainer title="Reading Entries">
+  <PageContainer title="Reading Entries" ref="pageContainer">
     <div v-if="loading" class="flex justify-center">
       <span class="loading loading-spinner loading-lg"></span>
     </div>
@@ -25,10 +25,9 @@ import { defineComponent, ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import TrackProgressModal from '@/components/TrackProgressModal.vue';
 import PageContainer from '@/components/PageContainer.vue';
-import Toast from '@/components/Toast.vue';
 
 export default defineComponent({
-  components: { TrackProgressModal, PageContainer, Toast },
+  components: { TrackProgressModal, PageContainer },
   setup() {
     const route = useRoute();
     const bookId = ref('');
@@ -36,7 +35,7 @@ export default defineComponent({
     const loading = ref(true);
     const showModal = ref(false);
     const latestProgress = ref(0);
-    const toast = ref(null);
+    const pageContainer = ref(null);
 
     const fetchReadingEntries = async (readingId: string) => {
       try {
@@ -75,10 +74,10 @@ export default defineComponent({
           showModal.value = false;
         } else {
           const errorData = await response.json();
-          toast.value.showToast({ message: errorData.error, type: 'alert-error' });
+          pageContainer.value.showToast({ message: errorData.error, type: 'alert-error' });
         }
       } catch (error) {
-        toast.value.showToast({ message: 'Failed to track progress.', type: 'alert-error' });
+        pageContainer.value.showToast({ message: 'Failed to track progress.', type: 'alert-error' });
       }
     };
 
@@ -93,7 +92,7 @@ export default defineComponent({
       showModal,
       trackProgress,
       latestProgress,
-      toast,
+      pageContainer,
     };
   },
 });

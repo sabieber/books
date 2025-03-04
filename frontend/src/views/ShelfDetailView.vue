@@ -1,5 +1,5 @@
 <template>
-  <PageContainer :title="shelf.name">
+  <PageContainer :title="shelf.name" ref="pageContainer">
     <p class="text-sm text-gray-400 mb-4">{{ shelf.description }}</p>
     <div v-if="loading" class="flex justify-center">
       <span class="loading loading-spinner loading-lg"></span>
@@ -33,7 +33,7 @@ export default defineComponent({
     const books = ref([]);
     const loading = ref(true);
     const shelf = ref({ name: '', description: '' });
-    const toast = ref(null);
+    const pageContainer = ref(null);
 
     const fetchShelfBooks = async (shelfId: string) => {
       try {
@@ -64,15 +64,15 @@ export default defineComponent({
           body: JSON.stringify({ book_id: bookId }),
         });
         if (response.ok) {
-          toast.value.showToast({ message: 'Book removed from shelf successfully.', type: 'alert-success' });
+          pageContainer.value.showToast({ message: 'Book removed from shelf successfully.', type: 'alert-success' });
           books.value = books.value.filter(book => book.id !== bookId);
         } else {
           console.error('Failed to remove book from shelf:', await response.json());
-          toast.value.showToast({ message: 'Failed to remove book from shelf.', type: 'alert-error' });
+          pageContainer.value.showToast({ message: 'Failed to remove book from shelf.', type: 'alert-error' });
         }
       } catch (error) {
         console.error('Failed to remove book from shelf:', error);
-        toast.value.showToast({ message: 'Failed to remove book from shelf.', type: 'alert-error' });
+        pageContainer.value.showToast({ message: 'Failed to remove book from shelf.', type: 'alert-error' });
       }
     };
 
@@ -91,7 +91,7 @@ export default defineComponent({
       shelf,
       removeBookFromShelf,
       viewBookDetail,
-      toast,
+      pageContainer,
     };
   },
 });

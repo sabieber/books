@@ -1,5 +1,5 @@
 <template>
-  <PageContainer :title="book?.volumeInfo?.title ?? 'Book'">
+  <PageContainer :title="book?.volumeInfo?.title ?? 'Book'" ref="pageContainer">
     <div v-if="loading" class="flex justify-center">
       <span class="loading loading-spinner loading-lg"></span>
     </div>
@@ -33,11 +33,10 @@ import { PlusIcon } from "@heroicons/vue/16/solid";
 import { fetchBookDetails } from '@/api/googleBooksApi';
 import StartReadingModal from '@/components/StartReadingModal.vue';
 import PageContainer from '@/components/PageContainer.vue';
-import Toast from '@/components/Toast.vue';
 import moment from 'moment';
 
 export default defineComponent({
-  components: { PlusIcon, StartReadingModal, PageContainer, Toast },
+  components: { PlusIcon, StartReadingModal, PageContainer },
   setup() {
     const route = useRoute();
     const router = useRouter();
@@ -45,7 +44,7 @@ export default defineComponent({
     const readings = ref([]);
     const loading = ref(true);
     const showStartReadingModal = ref(false);
-    const toast = ref(null);
+    const pageContainer = ref(null);
 
     const fetchBookInfo = async (bookId: string) => {
       try {
@@ -93,10 +92,10 @@ export default defineComponent({
           showStartReadingModal.value = false;
         } else {
           const errorData = await response.json();
-          toast.value.showToast({ message: errorData.error, type: 'alert-error' });
+          pageContainer.value.showToast({ message: errorData.error, type: 'alert-error' });
         }
       } catch (error) {
-        toast.value.showToast({ message: 'Failed to start reading session.', type: 'alert-error' });
+        pageContainer.value.showToast({ message: 'Failed to start reading session.', type: 'alert-error' });
       }
     };
 
@@ -117,7 +116,7 @@ export default defineComponent({
       startReadingSession,
       showStartReadingModal,
       formatDate,
-      toast,
+      pageContainer,
     };
   },
 });
