@@ -15,5 +15,5 @@ diesel = { version = "2.2.8", features = ["postgres", "uuid", "chrono"] }
 diesel-derive-enum = { version = "2.1.0", features = ["postgres"] }
 dotenvy = "0.15.7"
 uuid = { version = "1.15.1", features = ["v4"] }
-argonautica = "0.2.0"
+argon2 = { version = "0.5.3", features = ["std"] }
 chrono = "0.4.40"
