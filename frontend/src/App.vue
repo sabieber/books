@@ -23,10 +23,10 @@
               <BookOpenIcon class="size-6" />
             </RouterLink>
           </li>
-          <li class="tooltip tooltip-bottom" data-tip="Logout">
-            <a @click="logout">
+          <li class="tooltip tooltip-bottom" data-tip="Profile">
+            <RouterLink to="/profile" :class="{ 'menu-active': $route.path === '/profile' }">
               <UserIcon class="size-6" />
-            </a>
+            </RouterLink>
           </li>
         </ul>
       </div>
@@ -50,25 +50,19 @@
           <BookOpenIcon class="size-6" />
         </RouterLink>
       </button>
-      <button @click="logout">
-        <UserIcon class="size-6" />
+      <button :class="{ 'dock-active': $route.path === '/profile' }">
+        <RouterLink to="/profile">
+          <UserIcon class="size-6" />
+        </RouterLink>
       </button>
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import router from "@/router";
 import { MagnifyingGlassIcon, HomeIcon, BookOpenIcon, UserIcon } from "@heroicons/vue/16/solid";
 
 export default {
   components: { MagnifyingGlassIcon, HomeIcon, BookOpenIcon, UserIcon },
-  methods: {
-    logout() {
-      localStorage.removeItem('token')
-      localStorage.removeItem('user_id')
-      router.push('/')
-    }
-  }
 };
 </script>
