@@ -1,12 +1,12 @@
 <template>
-  <PageContainer :title="book.volumeInfo.title">
+  <PageContainer :title="book?.volumeInfo?.title ?? 'Book'">
     <div v-if="loading" class="flex justify-center">
       <span class="loading loading-spinner loading-lg"></span>
     </div>
     <div v-else-if="book" class="text-white">
       <img :src="book.volumeInfo.imageLinks?.thumbnail" alt="Book cover" class="w-24 h-32 object-cover mb-4" />
       <p class="mb-2">{{ book.volumeInfo.authors?.join(', ') }}</p>
-      <p class="mb-2">{{ book.volumeInfo.publishedDate }}</p>
+      <p class="mb-2">{{ formatDate(book.volumeInfo.publishedDate) }}</p>
       <p class="mb-2" v-html="book.volumeInfo.description"></p>
       <button @click="showStartReadingModal = true" class="btn btn-primary mt-4">Start Reading</button>
       <div v-if="readings.length" class="mt-4">
@@ -34,6 +34,7 @@ import { fetchBookDetails } from '@/api/googleBooksApi';
 import StartReadingModal from '@/components/StartReadingModal.vue';
 import PageContainer from '@/components/PageContainer.vue';
 import Toast from '@/components/Toast.vue';
+import moment from 'moment';
 
 export default defineComponent({
   components: { PlusIcon, StartReadingModal, PageContainer, Toast },
@@ -99,6 +100,10 @@ export default defineComponent({
       }
     };
 
+    const formatDate = (date: string) => {
+      return moment(date).format('LL');
+    };
+
     onMounted(() => {
       const bookId = route.params.id as string;
       fetchBookDetailsWrapper(bookId);
@@ -111,6 +116,7 @@ export default defineComponent({
       viewReadingDetail,
       startReadingSession,
       showStartReadingModal,
+      formatDate,
       toast,
     };
   },

@@ -1,5 +1,5 @@
 <template>
-  <PageContainer :title="book.volumeInfo.title">
+  <PageContainer :title="book?.volumeInfo?.title ?? 'Book'" ref="pageContainer">
     <template #title-button>
       <button @click="showPopup = true" class="btn btn-circle btn-primary text-white">
         <PlusIcon class="size-6 text-white"/>
@@ -11,7 +11,7 @@
     <div v-else-if="book" class="text-white">
       <img :src="book.volumeInfo.imageLinks?.thumbnail" alt="Book cover" class="w-24 h-32 object-cover mb-4" />
       <p class="mb-2">{{ book.volumeInfo.authors?.join(', ') }}</p>
-      <p class="mb-2">{{ book.volumeInfo.publishedDate }}</p>
+      <p class="mb-2">{{ formatDate(book.volumeInfo.publishedDate) }}</p>
       <p class="mb-2" v-html="book.volumeInfo.description"></p>
     </div>
     <div v-else class="text-white text-center">Book not found.</div>
@@ -26,16 +26,16 @@ import { PlusIcon } from "@heroicons/vue/16/solid";
 import AddToShelfPopup from '@/components/AddToShelfPopup.vue';
 import { fetchBookDetails } from '@/api/googleBooksApi';
 import PageContainer from '@/components/PageContainer.vue';
-import Toast from '@/components/Toast.vue';
+import moment from 'moment';
 
 export default defineComponent({
-  components: { PlusIcon, AddToShelfPopup, PageContainer, Toast },
+  components: { PlusIcon, AddToShelfPopup, PageContainer },
   setup() {
     const route = useRoute();
     const book = ref(null);
     const loading = ref(true);
     const showPopup = ref(false);
-    const toast = ref(null);
+    const pageContainer = ref(null);
 
     const fetchBookDetailsWrapper = async (bookId: string) => {
       book.value = await fetchBookDetails(bookId);
@@ -43,7 +43,11 @@ export default defineComponent({
     };
 
     const showToast = ({ message, type }) => {
-      toast.value.showToast({ message, type });
+      pageContainer.value.showToast({ message, type });
+    };
+
+    const formatDate = (date: string) => {
+      return moment(date).format('LL');
     };
 
     onMounted(() => {
@@ -56,7 +60,8 @@ export default defineComponent({
       loading,
       showPopup,
       showToast,
-      toast,
+      formatDate,
+      pageContainer,
     };
   },
 });
