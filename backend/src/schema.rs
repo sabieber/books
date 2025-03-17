@@ -86,10 +86,4 @@ diesel::joinable!(readings -> books (book));
 diesel::joinable!(readings -> users (user));
 diesel::joinable!(shelves -> users (user));
 
-diesel::allow_tables_to_appear_in_same_query!(
-    books,
-    reading_entries,
-    readings,
-    shelves,
-    users,
-);
+diesel::allow_tables_to_appear_in_same_query!(books, reading_entries, readings, shelves, users,);
