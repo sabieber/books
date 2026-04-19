@@ -17,7 +17,9 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, onMounted, PropType } from 'vue';
+import { defineComponent, ref, onMounted } from 'vue';
+import type { PropType } from 'vue';
+import { apiFetch } from '@/api/client';
 
 export default defineComponent({
   props: {
@@ -27,75 +29,55 @@ export default defineComponent({
     },
   },
   setup(props, { emit }) {
-    const shelves = ref([]);
+    const shelves = ref<Array<{ id: string, name: string, description: string }>>([]);
     const loadingShelves = ref(false);
 
     const fetchShelves = async () => {
       loadingShelves.value = true;
-      const userId = localStorage.getItem('user_id');
-      if (userId) {
-        try {
-          const response = await fetch('http://localhost:3000/api/shelves', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user_id: userId }),
-          });
-          if (response.ok) {
-            const data = await response.json();
-            shelves.value = data.shelves;
-          } else {
-            console.error('Failed to fetch shelves:', await response.json());
-          }
-        } catch (error) {
-          console.error('Failed to fetch shelves:', error);
-        } finally {
-          loadingShelves.value = false;
+      try {
+        const response = await apiFetch('/api/shelves', { method: 'POST' });
+        if (response.ok) {
+          const data = await response.json();
+          shelves.value = data.shelves;
+        } else {
+          console.error('Failed to fetch shelves:', await response.json());
         }
-      } else {
+      } catch (error) {
+        console.error('Failed to fetch shelves:', error);
+      } finally {
         loadingShelves.value = false;
       }
     };
 
     const addBookToShelf = async (shelfId: string) => {
-      const userId = localStorage.getItem('user_id');
-      if (userId && props.book) {
-        try {
-          const response = await fetch('http://localhost:3000/api/shelves/add-book', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              user_id: userId,
-              shelf_id: shelfId,
-              title: props.book.volumeInfo.title,
-              author: props.book.volumeInfo.authors?.join(', '),
-              isbn13: props.book.volumeInfo.industryIdentifiers?.find(id => id.type === 'ISBN_13')?.identifier,
-              isbn10: props.book.volumeInfo.industryIdentifiers?.find(id => id.type === 'ISBN_10')?.identifier,
-              google_books_id: props.book.id,
-            }),
-          });
-          if (response.ok) {
-            emit('toast', { message: 'Book added to shelf successfully.', type: 'alert-success' });
-            emit('close');
-          } else {
-            console.error('Failed to add book to shelf:', await response.json());
-            emit('toast', { message: 'Failed to add book to shelf.', type: 'alert-error' });
-          }
-        } catch (error) {
-          console.error('Failed to add book to shelf:', error);
+      try {
+        const response = await apiFetch('/api/shelves/add-book', {
+          method: 'POST',
+          body: JSON.stringify({
+            shelf_id: shelfId,
+            title: props.book.volumeInfo.title,
+            author: props.book.volumeInfo.authors?.join(', '),
+            isbn13: props.book.volumeInfo.industryIdentifiers?.find((id: any) => id.type === 'ISBN_13')?.identifier,
+            isbn10: props.book.volumeInfo.industryIdentifiers?.find((id: any) => id.type === 'ISBN_10')?.identifier,
+            google_books_id: props.book.id,
+          }),
+        });
+        if (response.ok) {
+          emit('toast', { message: 'Book added to shelf successfully.', type: 'alert-success' });
+          emit('close');
+        } else {
+          console.error('Failed to add book to shelf:', await response.json());
           emit('toast', { message: 'Failed to add book to shelf.', type: 'alert-error' });
         }
+      } catch (error) {
+        console.error('Failed to add book to shelf:', error);
+        emit('toast', { message: 'Failed to add book to shelf.', type: 'alert-error' });
       }
     };
 
-    onMounted(() => {
-      fetchShelves();
-    });
+    onMounted(fetchShelves);
 
-    return {
-      shelves,
-      loadingShelves,
-      addBookToShelf,
-    };
+    return { shelves, loadingShelves, addBookToShelf };
   },
 });
 </script>

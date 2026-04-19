@@ -25,6 +25,17 @@ import { RouterLink } from "vue-router";
 import { UserIcon, KeyIcon, ExclamationTriangleIcon } from "@heroicons/vue/16/solid";
 import PageContainer from '@/components/PageContainer.vue';
 import router from "@/router";
+import { useAuthStore } from '@/stores/auth';
+import { API_BASE_URL } from '@/api/config';
+
+interface LoginSuccess {
+  token: string
+  user_id: string
+}
+
+interface LoginError {
+  error: string
+}
 
 export default defineComponent({
   components: { RouterLink, UserIcon, KeyIcon, ExclamationTriangleIcon, PageContainer },
@@ -32,34 +43,30 @@ export default defineComponent({
     const name = ref('');
     const password = ref('');
     const errorMessage = ref('');
+    const auth = useAuthStore();
 
     const login = () => {
-      fetch('http://localhost:3000/api/user/login', {
+      fetch(`${API_BASE_URL}/api/user/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: name.value, password: password.value })
       }).then(async response => {
         if (response.ok) {
-          response.json().then(data => {
-            localStorage.setItem('token', 'TODO');
-            localStorage.setItem('user_id', data.user_id);
+          response.json().then((data: LoginSuccess) => {
+            auth.setAuth(data.token, data.user_id);
             router.push('/');
-          }).catch(error => {
+          }).catch(() => {
             errorMessage.value = 'Failed to connect to the server!';
-            console.error('Login failed:', error);
           });
         } else {
-          response.json().then(data => {
+          response.json().then((data: LoginError) => {
             errorMessage.value = data.error;
-            console.error('Login failed:', data.error);
-          }).catch(error => {
+          }).catch(() => {
             errorMessage.value = 'Failed to connect to the server!';
-            console.error('Login failed:', error);
           });
         }
-      }).catch(error => {
+      }).catch(() => {
         errorMessage.value = 'Failed to connect to the server!';
-        console.error('Login failed:', error);
       });
     };
 

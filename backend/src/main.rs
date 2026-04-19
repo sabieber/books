@@ -6,6 +6,7 @@ mod readings;
 mod schema;
 mod shelves;
 mod users;
+mod auth;
 
 use axum::Router;
 use dotenvy::dotenv;
@@ -20,6 +21,7 @@ async fn main() {
     tracing_subscriber::fmt::init();
 
     dotenv().ok();
+    auth::init_jwt_secret();
 
     info!("initializing router...");
 

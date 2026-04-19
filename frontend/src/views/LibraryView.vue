@@ -29,40 +29,28 @@ import { useRouter } from 'vue-router';
 import { MinusIcon } from "@heroicons/vue/16/solid";
 import CreateShelfModal from '@/components/CreateShelfModal.vue';
 import PageContainer from '@/components/PageContainer.vue';
+import { apiFetch } from '@/api/client';
 
 export default defineComponent({
-  components: {
-    CreateShelfModal,
-    MinusIcon,
-    PageContainer,
-  },
+  components: { CreateShelfModal, MinusIcon, PageContainer },
   setup() {
     const shelves = ref<Array<{ id: string, name: string, description: string }>>([]);
     const loading = ref(true);
     const router = useRouter();
-    const pageContainer = ref(null);
+    const pageContainer = ref<any>(null);
 
     const fetchShelves = async () => {
-      const userId = localStorage.getItem('user_id');
-      if (userId) {
-        try {
-          const response = await fetch('http://localhost:3000/api/shelves', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user_id: userId }),
-          });
-          if (response.ok) {
-            const data = await response.json();
-            shelves.value = data.shelves;
-          } else {
-            console.error('Failed to fetch shelves:', await response.json());
-          }
-        } catch (error) {
-          console.error('Failed to fetch shelves:', error);
-        } finally {
-          loading.value = false;
+      try {
+        const response = await apiFetch('/api/shelves', { method: 'POST' });
+        if (response.ok) {
+          const data = await response.json();
+          shelves.value = data.shelves;
+        } else {
+          console.error('Failed to fetch shelves:', await response.json());
         }
-      } else {
+      } catch (error) {
+        console.error('Failed to fetch shelves:', error);
+      } finally {
         loading.value = false;
       }
     };
@@ -73,34 +61,26 @@ export default defineComponent({
 
     const removeShelf = async (shelfId: string) => {
       try {
-        const response = await fetch('http://localhost:3000/api/shelves/remove', {
+        const response = await apiFetch('/api/shelves/remove', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ shelf_id: shelfId }),
         });
         if (response.ok) {
-          pageContainer.value.showToast({ message: 'Shelf removed successfully.', type: 'alert-success' });
+          pageContainer.value?.showToast({ message: 'Shelf removed successfully.', type: 'alert-success' });
           shelves.value = shelves.value.filter(shelf => shelf.id !== shelfId);
         } else {
           console.error('Failed to remove shelf:', await response.json());
-          pageContainer.value.showToast({ message: 'Failed to remove shelf.', type: 'alert-error' });
+          pageContainer.value?.showToast({ message: 'Failed to remove shelf.', type: 'alert-error' });
         }
       } catch (error) {
         console.error('Failed to remove shelf:', error);
-        pageContainer.value.showToast({ message: 'Failed to remove shelf.', type: 'alert-error' });
+        pageContainer.value?.showToast({ message: 'Failed to remove shelf.', type: 'alert-error' });
       }
     };
 
     onMounted(fetchShelves);
 
-    return {
-      shelves,
-      loading,
-      fetchShelves,
-      goToShelf,
-      removeShelf,
-      pageContainer,
-    };
+    return { shelves, loading, fetchShelves, goToShelf, removeShelf, pageContainer };
   },
 });
 </script>

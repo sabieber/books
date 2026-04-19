@@ -24,22 +24,22 @@ import { defineComponent, ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { MinusIcon } from "@heroicons/vue/16/solid";
 import PageContainer from '@/components/PageContainer.vue';
+import { apiFetch } from '@/api/client';
 
 export default defineComponent({
   components: { MinusIcon, PageContainer },
   setup() {
     const route = useRoute();
     const router = useRouter();
-    const books = ref([]);
+    const books = ref<Array<{ id: string, title: string, author: string }>>([]);
     const loading = ref(true);
     const shelf = ref({ name: '', description: '' });
-    const pageContainer = ref(null);
+    const pageContainer = ref<any>(null);
 
     const fetchShelfBooks = async (shelfId: string) => {
       try {
-        const response = await fetch('http://localhost:3000/api/shelves/books', {
+        const response = await apiFetch('/api/shelves/books', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ shelf_id: shelfId }),
         });
         if (response.ok) {
@@ -58,21 +58,20 @@ export default defineComponent({
 
     const removeBookFromShelf = async (bookId: string) => {
       try {
-        const response = await fetch('http://localhost:3000/api/shelves/remove-book', {
+        const response = await apiFetch('/api/shelves/remove-book', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ book_id: bookId }),
         });
         if (response.ok) {
-          pageContainer.value.showToast({ message: 'Book removed from shelf successfully.', type: 'alert-success' });
-          books.value = books.value.filter(book => book.id !== bookId);
+          pageContainer.value?.showToast({ message: 'Book removed from shelf successfully.', type: 'alert-success' });
+          books.value = books.value.filter((book: { id: string }) => book.id !== bookId);
         } else {
-          console.error('Failed to remove book from shelf:', await response.json());
-          pageContainer.value.showToast({ message: 'Failed to remove book from shelf.', type: 'alert-error' });
+          console.error('Failed to remove book:', await response.json());
+          pageContainer.value?.showToast({ message: 'Failed to remove book from shelf.', type: 'alert-error' });
         }
       } catch (error) {
-        console.error('Failed to remove book from shelf:', error);
-        pageContainer.value.showToast({ message: 'Failed to remove book from shelf.', type: 'alert-error' });
+        console.error('Failed to remove book:', error);
+        pageContainer.value?.showToast({ message: 'Failed to remove book from shelf.', type: 'alert-error' });
       }
     };
 
@@ -80,19 +79,9 @@ export default defineComponent({
       router.push({ name: 'book-detail', params: { id } });
     };
 
-    onMounted(() => {
-      const shelfId = route.params.id as string;
-      fetchShelfBooks(shelfId);
-    });
+    onMounted(() => fetchShelfBooks(route.params.id as string));
 
-    return {
-      books,
-      loading,
-      shelf,
-      removeBookFromShelf,
-      viewBookDetail,
-      pageContainer,
-    };
+    return { books, loading, shelf, removeBookFromShelf, viewBookDetail, pageContainer };
   },
 });
 </script>

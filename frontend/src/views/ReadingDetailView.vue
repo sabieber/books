@@ -25,23 +25,23 @@ import { defineComponent, ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import TrackProgressModal from '@/components/TrackProgressModal.vue';
 import PageContainer from '@/components/PageContainer.vue';
+import { apiFetch } from '@/api/client';
 
 export default defineComponent({
   components: { TrackProgressModal, PageContainer },
   setup() {
     const route = useRoute();
     const bookId = ref('');
-    const entries = ref([]);
+    const entries = ref<Array<{ id: string, read_at: string, progress: number, mode: string }>>([]);
     const loading = ref(true);
     const showModal = ref(false);
     const latestProgress = ref(0);
-    const pageContainer = ref(null);
+    const pageContainer = ref<any>(null);
 
     const fetchReadingEntries = async (readingId: string) => {
       try {
-        const response = await fetch('http://localhost:3000/api/books/reading', {
+        const response = await apiFetch('/api/books/reading', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ reading_id: readingId }),
         });
         if (response.ok) {
@@ -63,21 +63,19 @@ export default defineComponent({
 
     const trackProgress = async (progress: number, readAt: string) => {
       try {
-        const userId = localStorage.getItem('user_id');
-        const response = await fetch('http://localhost:3000/api/books/track-progress', {
+        const response = await apiFetch('/api/books/track-progress', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ reading_id: route.params.id, book_id: bookId.value, user_id: userId, progress, read_at: readAt }),
+          body: JSON.stringify({ reading_id: route.params.id, progress, read_at: readAt }),
         });
         if (response.ok) {
           fetchReadingEntries(route.params.id as string);
           showModal.value = false;
         } else {
           const errorData = await response.json();
-          pageContainer.value.showToast({ message: errorData.error, type: 'alert-error' });
+          pageContainer.value?.showToast({ message: errorData.error, type: 'alert-error' });
         }
       } catch (error) {
-        pageContainer.value.showToast({ message: 'Failed to track progress.', type: 'alert-error' });
+        pageContainer.value?.showToast({ message: 'Failed to track progress.', type: 'alert-error' });
       }
     };
 

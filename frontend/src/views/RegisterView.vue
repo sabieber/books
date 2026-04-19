@@ -21,6 +21,7 @@ import { defineComponent, ref } from 'vue';
 import router from "@/router";
 import { KeyIcon, UserIcon, ExclamationTriangleIcon } from "@heroicons/vue/16/solid";
 import PageContainer from '@/components/PageContainer.vue';
+import { API_BASE_URL } from '@/api/config';
 
 export default defineComponent({
   components: { KeyIcon, UserIcon, ExclamationTriangleIcon, PageContainer },
@@ -30,7 +31,7 @@ export default defineComponent({
     const errorMessage = ref('');
 
     const register = () => {
-      fetch('http://localhost:3000/api/user/register', {
+      fetch(`${API_BASE_URL}/api/user/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: name.value, password: password.value })
