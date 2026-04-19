@@ -14,3 +14,6 @@
 ### Docker
 .env
 db/
+
+### Git worktrees
+.worktrees/
