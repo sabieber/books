@@ -24,7 +24,8 @@ import { defineComponent, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import PageContainer from '@/components/PageContainer.vue';
 import { PowerIcon } from "@heroicons/vue/16/solid";
-import { API_BASE_URL } from '@/api/config';
+import { apiFetch } from '@/api/client';
+import { useAuthStore } from '@/stores/auth';
 
 export default defineComponent({
   components: { PageContainer, PowerIcon },
@@ -33,12 +34,11 @@ export default defineComponent({
     const pageContainer = ref<any>(null);
     const selectedFile = ref<File | null>(null);
     const isUploading = ref(false);
+    const auth = useAuthStore();
 
     const logout = () => {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user_id');
-      router.push('/');
-      pageContainer.value.showToast({ message: 'Logged out successfully.', type: 'alert-success' });
+      auth.logout();
+      router.push('/login');
     };
 
     const handleFileChange = (event: Event) => {
@@ -54,20 +54,12 @@ export default defineComponent({
         return;
       }
 
-      const userId = localStorage.getItem('user_id');
-      if (!userId) {
-        pageContainer.value.showToast({ message: 'You must be logged in to import.', type: 'alert-error' });
-        router.push('/');
-        return;
-      }
-
       isUploading.value = true;
       const formData = new FormData();
-      formData.append('user_id', userId);
       formData.append('file', selectedFile.value);
 
       try {
-        const response = await fetch(`${API_BASE_URL}/api/user/import-good-reads`, {
+        const response = await apiFetch('/api/user/import-good-reads', {
           method: 'POST',
           body: formData,
         });
@@ -87,13 +79,7 @@ export default defineComponent({
       }
     };
 
-    return {
-      logout,
-      pageContainer,
-      handleFileChange,
-      uploadFile,
-      isUploading,
-    };
+    return { logout, pageContainer, handleFileChange, uploadFile, isUploading };
   }
 });
 </script>

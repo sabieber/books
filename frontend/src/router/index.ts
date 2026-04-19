@@ -8,6 +8,7 @@ import RegisterView from "@/views/RegisterView.vue";
 import ShelfDetailView from "@/views/ShelfDetailView.vue";
 import BookDetailView from "@/views/BookDetailView.vue";
 import ReadingDetailView from "@/views/ReadingDetailView.vue";
+import { useAuthStore } from '@/stores/auth';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -86,20 +87,17 @@ const router = createRouter({
   ],
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, _from, next) => {
   if (to.meta.requiresAuth) {
-    const token = localStorage.getItem('token');
-    if (token) {
-      // User is authenticated, proceed to the route
-      next();
+    const auth = useAuthStore()
+    if (auth.isAuthenticated) {
+      next()
     } else {
-      // User is not authenticated, redirect to login
-      next('/login');
+      next('/login')
     }
   } else {
-    // Non-protected route, allow access
-    next();
+    next()
   }
-});
+})
 
 export default router

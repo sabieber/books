@@ -34,23 +34,23 @@ import { fetchBookDetails } from '@/api/googleBooksApi';
 import StartReadingModal from '@/components/StartReadingModal.vue';
 import PageContainer from '@/components/PageContainer.vue';
 import moment from 'moment';
+import { apiFetch } from '@/api/client';
 
 export default defineComponent({
   components: { PlusIcon, StartReadingModal, PageContainer },
   setup() {
     const route = useRoute();
     const router = useRouter();
-    const book = ref(null);
-    const readings = ref([]);
+    const book = ref<any>(null);
+    const readings = ref<Array<{ id: string, started_at: string, finished_at: string | null, progress: number, total_pages: number }>>([]);
     const loading = ref(true);
     const showStartReadingModal = ref(false);
-    const pageContainer = ref(null);
+    const pageContainer = ref<any>(null);
 
     const fetchBookInfo = async (bookId: string) => {
       try {
-        const response = await fetch('http://localhost:3000/api/books/info', {
+        const response = await apiFetch('/api/books/info', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ book_id: bookId }),
         });
         if (response.ok) {
@@ -81,21 +81,19 @@ export default defineComponent({
 
     const startReadingSession = async (totalPages: number) => {
       try {
-        const userId = localStorage.getItem('user_id');
-        const response = await fetch('http://localhost:3000/api/books/start-reading', {
+        const response = await apiFetch('/api/books/start-reading', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ book_id: route.params.id, user_id: userId, total_pages: totalPages }),
+          body: JSON.stringify({ book_id: route.params.id, total_pages: totalPages }),
         });
         if (response.ok) {
           fetchBookDetailsWrapper(route.params.id as string);
           showStartReadingModal.value = false;
         } else {
           const errorData = await response.json();
-          pageContainer.value.showToast({ message: errorData.error, type: 'alert-error' });
+          pageContainer.value?.showToast({ message: errorData.error, type: 'alert-error' });
         }
       } catch (error) {
-        pageContainer.value.showToast({ message: 'Failed to start reading session.', type: 'alert-error' });
+        pageContainer.value?.showToast({ message: 'Failed to start reading session.', type: 'alert-error' });
       }
     };
 

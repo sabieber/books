@@ -1,3 +1,4 @@
+use crate::auth::AuthUser;
 use crate::db::connect;
 use crate::models::{Book, Reading};
 use crate::schema::books::dsl::books;
@@ -31,15 +32,25 @@ pub struct BookInfoResponse {
 ///
 /// This route accepts a JSON payload with the following structure:
 /// - `book_id`: The UUID of the book to fetch information for.
-pub(crate) async fn get_book_info(Json(payload): Json<BookInfoRequest>) -> impl IntoResponse {
+pub(crate) async fn get_book_info(
+    auth: AuthUser,
+    Json(payload): Json<BookInfoRequest>,
+) -> impl IntoResponse {
     let connection = &mut connect();
 
-    let book_id = Uuid::parse_str(&payload.book_id).expect("Invalid book ID");
+    let book_id = match Uuid::parse_str(&payload.book_id) {
+        Ok(id) => id,
+        Err(_) => return (StatusCode::BAD_REQUEST, Json(json!(ErrorResponse { error: "Invalid book ID.".to_string() }))),
+    };
 
-    let db_readings = readings
+    let db_readings = match readings
         .filter(schema::readings::dsl::book.eq(book_id))
+        .filter(schema::readings::dsl::user.eq(auth.0))
         .load::<Reading>(connection)
-        .expect("Error loading readings");
+    {
+        Ok(r) => r,
+        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!(ErrorResponse { error: format!("Error loading readings: {}", e) }))),
+    };
 
     let mut json_readings = Vec::new();
     for reading in db_readings {
@@ -57,6 +68,7 @@ pub(crate) async fn get_book_info(Json(payload): Json<BookInfoRequest>) -> impl 
 
     match books
         .filter(schema::books::dsl::id.eq(book_id))
+        .filter(schema::books::dsl::user.eq(auth.0))
         .first::<Book>(connection)
     {
         Ok(book) => (
@@ -72,5 +84,21 @@ pub(crate) async fn get_book_info(Json(payload): Json<BookInfoRequest>) -> impl 
                 error: "Book not found.".to_string(),
             })),
         ),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use axum::{body::Body, http::Request, routing::post, Router};
+    use tower::ServiceExt;
+    use super::*;
+
+    #[tokio::test]
+    async fn test_get_book_info_requires_auth() {
+        let app = Router::new().route("/api/books/info", post(get_book_info));
+        let response = app
+            .oneshot(Request::builder().method("POST").uri("/api/books/info").body(Body::empty()).unwrap())
+            .await.unwrap();
+        assert_eq!(response.status(), axum::http::StatusCode::UNAUTHORIZED);
     }
 }

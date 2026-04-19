@@ -1,3 +1,4 @@
+use crate::auth::AuthUser;
 use crate::db::connect;
 use crate::goodreads_importer::BookRecord;
 use crate::models::{Book, Shelf, User};
@@ -108,7 +109,7 @@ pub struct LoginRequest {
 /// Response type for a successful user login.
 #[derive(Debug, Serialize)]
 pub struct LoginResponse {
-    pub message: String,
+    pub token: String,
     pub user_id: String,
 }
 
@@ -139,13 +140,24 @@ pub(crate) async fn login(Json(payload): Json<LoginRequest>) -> impl IntoRespons
         .is_ok();
 
     if is_valid {
-        (
-            StatusCode::OK,
-            Json(json!(LoginResponse {
-                message: "Successfully logged in user.".to_string(),
-                user_id: user.id.to_string(),
-            })),
-        )
+        match crate::auth::create_token(user.id) {
+            Ok(token) => (
+                StatusCode::OK,
+                Json(json!(LoginResponse {
+                    token,
+                    user_id: user.id.to_string(),
+                })),
+            ),
+            Err(e) => {
+                tracing::error!("Failed to create JWT for user {}: {}", user.id, e);
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(json!(ErrorResponse {
+                        error: "Failed to generate authentication token.".to_string(),
+                    })),
+                )
+            }
+        }
     } else {
         (
             StatusCode::UNAUTHORIZED,
@@ -159,10 +171,14 @@ pub(crate) async fn login(Json(payload): Json<LoginRequest>) -> impl IntoRespons
 /// Handles importing GoodReads CSV file.
 ///
 /// This route accepts a multipart form data with the following structure:
-/// - `user_id`: The ID of the user.
 /// - `file`: The CSV file to import.
-pub(crate) async fn import_good_reads(mut multipart: Multipart) -> impl IntoResponse {
-    let mut user_id_str = None;
+///
+/// Authentication is required via JWT token in the Authorization header.
+pub(crate) async fn import_good_reads(
+    auth: AuthUser,
+    mut multipart: Multipart,
+) -> impl IntoResponse {
+    let user_uuid = auth.0;
     let mut file_data = None;
 
     loop {
@@ -182,17 +198,7 @@ pub(crate) async fn import_good_reads(mut multipart: Multipart) -> impl IntoResp
             None => continue,
         };
 
-        if field_name == "user_id" {
-            match field.text().await {
-                Ok(text) => user_id_str = Some(text),
-                Err(e) => {
-                    return (
-                        StatusCode::BAD_REQUEST,
-                        Json(json!({ "error": format!("Failed to read user_id field: {}", e) })),
-                    );
-                }
-            }
-        } else if field_name == "file" {
+        if field_name == "file" {
             match field.bytes().await {
                 Ok(bytes) => file_data = Some(bytes),
                 Err(e) => {
@@ -205,21 +211,11 @@ pub(crate) async fn import_good_reads(mut multipart: Multipart) -> impl IntoResp
         }
     }
 
-    let (Some(user_id_str), Some(file_data)) = (user_id_str, file_data) else {
+    let Some(file_data) = file_data else {
         return (
             StatusCode::BAD_REQUEST,
-            Json(json!({ "error": "Invalid form data." })),
+            Json(json!({ "error": "Missing file." })),
         );
-    };
-
-    let user_uuid = match Uuid::parse_str(&user_id_str) {
-        Ok(id) => id,
-        Err(_) => {
-            return (
-                StatusCode::BAD_REQUEST,
-                Json(json!({ "error": "Invalid user ID." })),
-            )
-        }
     };
 
     let records = match BookRecord::from_reader(Cursor::new(file_data)) {
@@ -413,7 +409,7 @@ pub(crate) async fn import_good_reads(mut multipart: Multipart) -> impl IntoResp
                     books_added += 1;
                 }
                 Err(e) => {
-                    eprintln!("Error inserting book '{}': {}", record.title, e);
+                    tracing::error!("Error inserting book '{}': {}", record.title, e);
                     books_failed += 1;
                 }
             }
@@ -433,4 +429,49 @@ pub(crate) async fn import_good_reads(mut multipart: Multipart) -> impl IntoResp
     };
 
     (StatusCode::OK, Json(json!({ "message": message })))
+}
+
+#[cfg(test)]
+mod tests {
+    use axum::{body::Body, http::Request, routing::post, Router};
+    use tower::ServiceExt;
+    use super::{import_good_reads, login};
+
+    #[tokio::test]
+    async fn test_login_without_credentials_returns_non_ok() {
+        // Without a real DB, empty credentials should return non-200 (likely 500 or 401)
+        // This confirms the handler compiles and the route is wired correctly
+        let app = Router::new().route("/api/user/login", post(login));
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/user/login")
+                    .header("Content-Type", "application/json")
+                    .body(Body::from(r#"{"username":"","password":""}"#))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), axum::http::StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn test_import_good_reads_requires_auth() {
+        let app = Router::new().route(
+            "/api/user/import-good-reads",
+            post(import_good_reads),
+        );
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/user/import-good-reads")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), axum::http::StatusCode::UNAUTHORIZED);
+    }
 }

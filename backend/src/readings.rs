@@ -1,3 +1,4 @@
+use crate::auth::AuthUser;
 use crate::db::connect;
 use crate::models::{Reading, ReadingEntry, ReadingMode};
 use crate::schema::reading_entries::dsl::reading_entries;
@@ -27,15 +28,36 @@ pub struct ReadingInfoRequest {
 ///
 /// This route accepts a JSON payload with the following structure:
 /// - `reading_id`: The UUID of the reading session to fetch information for.
-pub(crate) async fn get_reading_info(Json(payload): Json<ReadingInfoRequest>) -> impl IntoResponse {
+pub(crate) async fn get_reading_info(
+    auth: AuthUser,
+    Json(payload): Json<ReadingInfoRequest>,
+) -> impl IntoResponse {
     let connection = &mut connect();
 
-    let reading_id = Uuid::parse_str(&payload.reading_id).expect("Invalid reading ID");
+    let reading_id = match Uuid::parse_str(&payload.reading_id) {
+        Ok(id) => id,
+        Err(_) => return (StatusCode::BAD_REQUEST, Json(json!(ErrorResponse { error: "Invalid reading ID.".to_string() }))),
+    };
 
-    let db_entries = reading_entries
+    let reading = match readings
+        .filter(schema::readings::dsl::id.eq(reading_id))
+        .first::<Reading>(connection)
+    {
+        Ok(r) => r,
+        Err(_) => return (StatusCode::NOT_FOUND, Json(json!(ErrorResponse { error: "Reading not found.".to_string() }))),
+    };
+
+    if reading.user != auth.0 {
+        return (StatusCode::FORBIDDEN, Json(json!(ErrorResponse { error: "Access denied.".to_string() })));
+    }
+
+    let db_entries = match reading_entries
         .filter(crate::schema::reading_entries::dsl::reading.eq(reading_id))
         .load::<ReadingEntry>(connection)
-        .expect("Error loading entries");
+    {
+        Ok(e) => e,
+        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!(ErrorResponse { error: format!("Error loading entries: {}", e) }))),
+    };
 
     let mut json_entries = Vec::new();
     for entry in db_entries {
@@ -48,31 +70,19 @@ pub(crate) async fn get_reading_info(Json(payload): Json<ReadingInfoRequest>) ->
         json_entries.push(json_entry);
     }
 
-    match readings
-        .filter(schema::readings::dsl::id.eq(reading_id))
-        .first::<Reading>(connection)
-    {
-        Ok(reading) => (
-            StatusCode::OK,
-            Json(json!(json!({
-                "book_id": reading.book.to_string(),
-                "entries": json_entries,
-            }))),
-        ),
-        Err(_) => (
-            StatusCode::NOT_FOUND,
-            Json(json!(ErrorResponse {
-                error: "Reading not found.".to_string(),
-            })),
-        ),
-    }
+    (
+        StatusCode::OK,
+        Json(json!({
+            "book_id": reading.book.to_string(),
+            "entries": json_entries,
+        })),
+    )
 }
 
 /// Request type for starting a new reading session.
 #[derive(Debug, Deserialize)]
 pub struct StartReadingRequest {
     pub book_id: String,
-    pub user_id: String,
     pub total_pages: i32,
 }
 
@@ -80,20 +90,33 @@ pub struct StartReadingRequest {
 ///
 /// This route accepts a JSON payload with the following structure:
 /// - `book_id`: The UUID of the book to start reading.
-/// - `user_id`: The UUID of the user starting the reading session.
 /// - `total_pages`: The total number of pages of the book.
 pub(crate) async fn start_reading_session(
+    auth: AuthUser,
     Json(payload): Json<StartReadingRequest>,
 ) -> impl IntoResponse {
     let connection = &mut connect();
+    let book_id = match Uuid::parse_str(&payload.book_id) {
+        Ok(id) => id,
+        Err(_) => return (StatusCode::BAD_REQUEST, Json(json!(ErrorResponse { error: "Invalid book ID.".to_string() }))),
+    };
 
-    let book_id = Uuid::parse_str(&payload.book_id).expect("Invalid book ID");
-    let user_id = Uuid::parse_str(&payload.user_id).expect("Invalid user ID");
+    let book: crate::models::Book = match crate::schema::books::dsl::books
+        .filter(crate::schema::books::dsl::id.eq(book_id))
+        .first(connection)
+    {
+        Ok(b) => b,
+        Err(_) => return (StatusCode::NOT_FOUND, Json(json!(ErrorResponse { error: "Book not found.".to_string() }))),
+    };
+
+    if book.user != auth.0 {
+        return (StatusCode::FORBIDDEN, Json(json!(ErrorResponse { error: "Access denied.".to_string() })));
+    }
 
     let new_reading = Reading {
         id: Uuid::new_v4(),
         book: book_id,
-        user: user_id,
+        user: auth.0,
         total_pages: payload.total_pages,
         progress: 0,
         mode: ReadingMode::Pages,
@@ -108,16 +131,8 @@ pub(crate) async fn start_reading_session(
         .values(&new_reading)
         .execute(connection)
     {
-        Ok(_) => (
-            StatusCode::CREATED,
-            Json(json!({ "message": "Reading session started successfully." })),
-        ),
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!(ErrorResponse {
-                error: format!("Error while starting the reading session: {}", e),
-            })),
-        ),
+        Ok(_) => (StatusCode::CREATED, Json(json!({ "message": "Reading session started successfully." }))),
+        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!(ErrorResponse { error: format!("Error while starting the reading session: {}", e) }))),
     }
 }
 
@@ -125,8 +140,6 @@ pub(crate) async fn start_reading_session(
 #[derive(Debug, Deserialize)]
 pub struct TrackProgressRequest {
     pub reading_id: String,
-    pub book_id: String,
-    pub user_id: String,
     pub progress: i32,
     pub read_at: String,
 }
@@ -135,25 +148,43 @@ pub struct TrackProgressRequest {
 ///
 /// This route accepts a JSON payload with the following structure:
 /// - `reading_id`: The UUID of the reading session.
-/// - `user_id`: The UUID of the user tracking the progress.
 /// - `progress`: The page number reached.
 /// - `read_at`: The date when reading took place.
-pub(crate) async fn track_progress(Json(payload): Json<TrackProgressRequest>) -> impl IntoResponse {
+pub(crate) async fn track_progress(
+    auth: AuthUser,
+    Json(payload): Json<TrackProgressRequest>,
+) -> impl IntoResponse {
     let connection = &mut connect();
 
-    let reading_id = Uuid::parse_str(&payload.reading_id).expect("Invalid reading ID");
-    let book_id = Uuid::parse_str(&payload.book_id).expect("Invalid book ID");
-    let user_id = Uuid::parse_str(&payload.user_id).expect("Invalid user ID");
+    let reading_id = match Uuid::parse_str(&payload.reading_id) {
+        Ok(id) => id,
+        Err(_) => return (StatusCode::BAD_REQUEST, Json(json!(ErrorResponse { error: "Invalid reading ID.".to_string() }))),
+    };
+
+    // Verify the reading belongs to the authenticated user
+    let reading: Reading = match readings
+        .filter(schema::readings::dsl::id.eq(reading_id))
+        .first(connection)
+    {
+        Ok(r) => r,
+        Err(_) => return (StatusCode::NOT_FOUND, Json(json!(ErrorResponse { error: "Reading not found.".to_string() }))),
+    };
+
+    if reading.user != auth.0 {
+        return (StatusCode::FORBIDDEN, Json(json!(ErrorResponse { error: "Access denied.".to_string() })));
+    }
 
     let new_entry = ReadingEntry {
         id: Uuid::new_v4(),
         reading: reading_id,
-        book: book_id,
-        user: user_id,
+        book: reading.book,
+        user: auth.0,
         progress: payload.progress,
         mode: ReadingMode::Pages,
-        read_at: chrono::NaiveDate::parse_from_str(&payload.read_at, "%Y-%m-%d")
-            .expect("Invalid date format"),
+        read_at: match chrono::NaiveDate::parse_from_str(&payload.read_at, "%Y-%m-%d") {
+            Ok(d) => d,
+            Err(_) => return (StatusCode::BAD_REQUEST, Json(json!(ErrorResponse { error: "Invalid date format. Use YYYY-MM-DD.".to_string() }))),
+        },
         created_at: chrono::Utc::now().naive_utc(),
         updated_at: chrono::Utc::now().naive_utc(),
     };
@@ -171,15 +202,41 @@ pub(crate) async fn track_progress(Json(payload): Json<TrackProgressRequest>) ->
     });
 
     match transaction_result {
-        Ok(_) => (
-            StatusCode::CREATED,
-            Json(json!({ "message": "Progress tracked successfully." })),
-        ),
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!(ErrorResponse {
-                error: format!("Error while tracking progress: {}", e),
-            })),
-        ),
+        Ok(_) => (StatusCode::CREATED, Json(json!({ "message": "Progress tracked successfully." }))),
+        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!(ErrorResponse { error: format!("Error while tracking progress: {}", e) }))),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use axum::{body::Body, http::Request, routing::post, Router};
+    use tower::ServiceExt;
+    use super::*;
+
+    #[tokio::test]
+    async fn test_start_reading_requires_auth() {
+        let app = Router::new().route("/api/books/start-reading", post(start_reading_session));
+        let response = app
+            .oneshot(Request::builder().method("POST").uri("/api/books/start-reading").body(Body::empty()).unwrap())
+            .await.unwrap();
+        assert_eq!(response.status(), axum::http::StatusCode::UNAUTHORIZED);
+    }
+
+    #[tokio::test]
+    async fn test_track_progress_requires_auth() {
+        let app = Router::new().route("/api/books/track-progress", post(track_progress));
+        let response = app
+            .oneshot(Request::builder().method("POST").uri("/api/books/track-progress").body(Body::empty()).unwrap())
+            .await.unwrap();
+        assert_eq!(response.status(), axum::http::StatusCode::UNAUTHORIZED);
+    }
+
+    #[tokio::test]
+    async fn test_get_reading_info_requires_auth() {
+        let app = Router::new().route("/api/books/reading", post(get_reading_info));
+        let response = app
+            .oneshot(Request::builder().method("POST").uri("/api/books/reading").body(Body::empty()).unwrap())
+            .await.unwrap();
+        assert_eq!(response.status(), axum::http::StatusCode::UNAUTHORIZED);
     }
 }
