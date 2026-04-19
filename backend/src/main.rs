@@ -1,5 +1,6 @@
 mod books;
 mod db;
+mod goodreads_importer;
 mod models;
 mod readings;
 mod schema;
